@@ -8,6 +8,8 @@
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 
+import { cleanUncertainText } from './normalize.ts';
+
 const ENDPOINT = 'https://api.deepgram.com/v1/listen';
 
 export function loadApiKey(): string {
@@ -33,6 +35,33 @@ export async function loadKeyterms(path: string): Promise<string[]> {
     .split('\n')
     .map((line) => line.trim())
     .filter((line) => line.length > 0 && !line.startsWith('#'));
+}
+
+/**
+ * A second opinion for stretches nova-3 returns nothing for.
+ *
+ * Whisper will attempt audio that nova-3's endpointing rejects, at the cost
+ * of reliability: on this recording the same 60-second window returned 140
+ * words and then 113 entirely different ones across two identical requests.
+ * Useful for telling a reader roughly what they will hear; never a record.
+ */
+export async function transcribeUncertain(apiKey: string, audio: Buffer): Promise<string> {
+  const response = await fetch(
+    'https://api.deepgram.com/v1/listen?model=whisper-large&punctuate=true',
+    {
+      method: 'POST',
+      headers: { Authorization: `Token ${apiKey}`, 'Content-Type': 'audio/mp4' },
+      body: audio,
+    },
+  );
+  if (!response.ok) return '';
+
+  const raw = (await response.json()) as any;
+  const text: string = raw?.results?.channels?.[0]?.alternatives?.[0]?.transcript ?? '';
+
+  // Rejects both the near-empty result (a synthetic room-tone control came
+  // back as the single word "You") and the degenerate loop.
+  return cleanUncertainText(text) ?? '';
 }
 
 export function buildUrl(keyterms: string[]): string {

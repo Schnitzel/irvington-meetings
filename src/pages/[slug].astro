@@ -47,6 +47,10 @@ const nameOf = new Map(groups.map((g) => [g.id, g.name]));
 // reads as prose rather than as a list of attributions. Grouping is applied
 // first, so consecutive audience questions do not each get their own
 // "Other speaker" heading.
+// Gaps are keyed by the paragraph they follow, so the transcript can be
+// rendered as one ordered pass.
+const gapAfter = new Map((transcript.gaps ?? []).map((g) => [g.start.toFixed(2), g]));
+
 const paragraphs = transcript.paragraphs.map((p, i) => {
   const group = groupOf[p.speaker];
   return {
@@ -54,8 +58,12 @@ const paragraphs = transcript.paragraphs.map((p, i) => {
     group,
     name: nameOf.get(group) ?? p.speaker,
     showSpeaker: i === 0 || groupOf[transcript.paragraphs[i - 1].speaker] !== group,
+    gap: gapAfter.get(p.end.toFixed(2)) ?? null,
   };
 });
+
+const gapCount = transcript.gaps?.length ?? 0;
+const gapSeconds = (transcript.gaps ?? []).reduce((sum, g) => sum + (g.end - g.start), 0);
 
 const speakerList = groups.map((g) => ({ id: g.id, name: g.name }));
 ---
@@ -149,6 +157,15 @@ const speakerList = groups.map((g) => ({ id: g.id, name: g.name }));
 
       <h2 class="transcript__heading" id="transcript">Transcript</h2>
 
+      {gapCount > 0 && (
+        <p class="transcript__note">
+          {gapCount} passages ({Math.round(gapSeconds / 60)} minutes in total)
+          could not be transcribed — mostly questions asked away from the
+          microphone. They are marked in place so you can hear them for
+          yourself.
+        </p>
+      )}
+
       <div class="transcript" data-transcript-body>
         {paragraphs.map((p) => (
           <div
@@ -171,6 +188,35 @@ const speakerList = groups.map((g) => ({ id: g.id, name: g.name }));
               </a>
               <span class="para__text" data-text>{p.text}</span>
             </p>
+
+            {p.gap && (
+              <aside
+                class="gap"
+                data-gap
+                data-gap-start={p.gap.start}
+                data-gap-end={p.gap.end}
+              >
+                <p class="gap__label">
+                  <a class="gap__jump" href={`#t=${p.gap.start.toFixed(2)}`}>
+                    {formatDuration(p.gap.start)}
+                  </a>
+                  <span>
+                    {Math.round(p.gap.end - p.gap.start)} seconds could not be
+                    transcribed. Listen to the recording for this part.
+                  </span>
+                </p>
+                {p.gap.text && (
+                  <>
+                    <p class="gap__guess">{p.gap.text}</p>
+                    <p class="gap__caveat">
+                      Rough automatic guess at the words above, from a second
+                      attempt on unclear audio. It is often wrong and should
+                      not be quoted — the recording is the record.
+                    </p>
+                  </>
+                )}
+              </aside>
+            )}
           </div>
         ))}
       </div>

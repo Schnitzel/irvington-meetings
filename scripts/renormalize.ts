@@ -48,6 +48,11 @@ try {
     const label = c.count === 0 ? 'no matches' : `${c.count} replaced`;
     console.log(`  correction "${c.find}": ${label}`);
   }
+  if (result.gaps > 0) {
+    console.log(
+      `  ${result.gaps} gaps marked for readers, ${result.gapsDescribed} with best-effort text`,
+    );
+  }
   for (const w of result.warnings) {
     console.log(`  warning: ${w}`);
   }

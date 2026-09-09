@@ -215,3 +215,79 @@
     padding-top: 0.35rem;
   }
 }
+
+/* --- Untranscribed passages -------------------------------------------- */
+
+/*
+ * A visible marker where the audio produced no reliable text.
+ *
+ * Without these the transcript runs two paragraphs together as though nothing
+ * happened in between, and a reader has no way to know a resident asked a
+ * question that was not captured. Most of these are audience questions asked
+ * away from the recorder.
+ */
+.transcript__note {
+  margin: 0.75rem 0 0;
+  font-family: var(--font-ui);
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+
+.gap {
+  margin: 0.35rem 0 1rem;
+  padding: 0.6rem 0.85rem;
+  border-left: 3px solid var(--rule-strong);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  background: var(--paper-sunken);
+  font-family: var(--font-ui);
+}
+
+.gap__label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--ink-soft);
+}
+.gap__jump {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  text-decoration: none;
+}
+.gap__jump:hover {
+  text-decoration: underline;
+}
+
+/*
+ * The best-effort text is deliberately set apart from the transcript: a
+ * different family, quoted, and dimmer. It is an aid to listening, not a
+ * record — the same request twice produced two different transcripts of the
+ * same minute.
+ */
+.gap__guess {
+  margin: 0.5rem 0 0;
+  padding-left: 0.75rem;
+  border-left: 2px dotted var(--rule-strong);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-style: italic;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+.gap__guess::before { content: '“'; }
+.gap__guess::after  { content: '”'; }
+
+.gap__caveat {
+  margin: 0.4rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  /*
+   * --ink-faint is tuned for the page background and only reaches 4.35:1 on
+   * the marker's sunken one. This caveat is the part a reader most needs to
+   * see, so it takes the stronger token and keeps hierarchy through size.
+   */
+  color: var(--ink-soft);
+}

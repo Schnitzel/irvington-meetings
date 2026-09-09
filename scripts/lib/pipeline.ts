@@ -13,7 +13,7 @@ import { applyCorrections, type CorrectionsFile } from './corrections.ts';
 import { buildTranscript } from './normalize.ts';
 import { parseDeepgram } from './parsers/deepgram.ts';
 import { parseTranscriptFile } from './parsers/index.ts';
-import { DEFAULT_GROUPING, validate, type SourceWord } from './schema.ts';
+import { DEFAULT_GROUPING, validate, type Gap, type SourceWord } from './schema.ts';
 
 export const CONTENT_ROOT = 'content';
 export const RAW_FILE = '.deepgram-raw.json';
@@ -59,6 +59,8 @@ async function writeJson(path: string, value: unknown, pretty = true): Promise<v
 }
 
 export interface NormalizeResult {
+  gaps: number;
+  gapsDescribed: number;
   paragraphs: number;
   speakers: string[];
   words: number;
@@ -89,6 +91,7 @@ export async function normalizeSlug(
   // --- Step 4: normalize -------------------------------------------------
   let words: SourceWord[];
   let duration: number;
+  let probedGaps: Gap[] = [];
 
   if (options.transcriptPath) {
     ({ words, duration } = await parseTranscriptFile(options.transcriptPath));
@@ -100,7 +103,9 @@ export async function normalizeSlug(
           `or pass --transcript with an SRT/VTT/Whisper file.`,
       );
     }
-    ({ words, duration } = parseDeepgram(JSON.parse(await readFile(rawPath, 'utf8'))));
+    ({ words, duration, gaps: probedGaps } = parseDeepgram(
+      JSON.parse(await readFile(rawPath, 'utf8')),
+    ));
   }
 
   // --- Step 5: corrections ----------------------------------------------
@@ -112,7 +117,7 @@ export async function normalizeSlug(
     correctionsFile?.corrections ?? [],
   );
 
-  const transcript = buildTranscript(corrected, duration, DEFAULT_GROUPING);
+  const transcript = buildTranscript(corrected, duration, DEFAULT_GROUPING, probedGaps);
 
   const { errors, warnings } = validate(transcript);
   if (errors.length > 0) {
@@ -159,6 +164,8 @@ export async function normalizeSlug(
   }
 
   return {
+    gaps: transcript.gaps?.length ?? 0,
+    gapsDescribed: transcript.gaps?.filter((g) => g.text).length ?? 0,
     paragraphs: transcript.paragraphs.length,
     speakers: transcript.speakers,
     words: corrected.length,

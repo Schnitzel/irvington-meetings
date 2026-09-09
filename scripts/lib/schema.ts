@@ -26,11 +26,32 @@ export interface Paragraph {
   words: Word[];
 }
 
+/**
+ * A stretch of audio that produced no reliable transcript.
+ *
+ * These are marked on the page rather than skipped silently. A reader looking
+ * at an unbroken run of paragraphs has no way to know that a resident asked a
+ * question in between and it was not captured — which is exactly how two of
+ * them went unnoticed until someone listened to the recording.
+ */
+export interface Gap {
+  start: number;
+  end: number;
+  /**
+   * Best-effort text from a more permissive model, or absent if even that
+   * produced nothing. Explicitly unreliable: on this audio the same request
+   * twice returned 140 words and then 113 completely different ones, so it is
+   * rendered as an aid to listening, never as a quotable record.
+   */
+  text?: string;
+}
+
 export interface Transcript {
   version: number;
   duration: number;
   speakers: string[];
   paragraphs: Paragraph[];
+  gaps?: Gap[];
 }
 
 /**

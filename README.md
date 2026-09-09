@@ -94,6 +94,28 @@ councilmember surnames, project names, zoning jargon. It is the single
 highest-leverage accuracy lever Deepgram offers. Adding names and re-running
 with `--force` noticeably improves the result.
 
+### Marking what could not be transcribed
+
+Some audio produces no reliable transcript — mostly questions asked away from
+the recorder. Those stretches are marked on the page rather than skipped
+silently, because a reader looking at an unbroken run of paragraphs has no way
+to know a resident spoke in between.
+
+```bash
+npm run probe-gaps -- --slug some-meeting
+```
+
+This asks a more permissive model what is in each gap and stores the answer as
+best-effort text, rendered in italics behind the marker and labelled as
+unquotable. It only pays for the silent stretches, so it is cheap to re-run.
+
+**That text is not a record and must never be presented as one.** On this
+audio the same 60-second window returned 140 words and then 113 entirely
+different ones across two identical requests. It also degenerates on
+low-information audio — one gap came back as "OK." twenty-five times — so
+`cleanUncertainText` in `normalize.ts` rejects looping and near-single-token
+results.
+
 ### Other transcript sources
 
 The pipeline accepts SRT, VTT and Whisper JSON, so MacWhisper works as a

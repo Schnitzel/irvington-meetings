@@ -30,7 +30,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { sliceAudio } from './audio.ts';
-import { transcribe } from './deepgram.ts';
+import { transcribe, transcribeUncertain } from './deepgram.ts';
 
 /** Long enough to keep context, short enough that quiet speech survives. */
 export const CHUNK_SECONDS = 300;
@@ -196,6 +196,49 @@ async function rescueGaps(options: {
   return recovered;
 }
 
+/**
+ * Describes whatever is left, so the page can say what a reader is missing
+ * instead of running two paragraphs together as though nothing happened.
+ */
+async function probeGaps(options: {
+  apiKey: string;
+  source: string;
+  words: DeepgramWord[];
+  duration: number;
+  cacheDir: string;
+  say: (message: string) => void;
+}): Promise<Array<{ start: number; end: number; text?: string }>> {
+  const { apiKey, source, words, duration, cacheDir, say } = options;
+
+  const gaps: Array<{ start: number; end: number; text?: string }> = [];
+  for (let i = 1; i < words.length; i++) {
+    const start = words[i - 1].end;
+    const end = words[i].start;
+    if (end - start >= GAP_RETRY_SECONDS) gaps.push({ start, end });
+  }
+  if (gaps.length === 0) return [];
+
+  say(`describing ${gaps.length} remaining gaps…`);
+  let described = 0;
+
+  for (const [i, gap] of gaps.entries()) {
+    const path = join(cacheDir, `probe-${String(i).padStart(3, '0')}.m4a`);
+    try {
+      await sliceAudio(source, path, gap.start, gap.end - gap.start, 1, { rescue: true });
+      const text = await transcribeUncertain(apiKey, await readFile(path));
+      if (text) {
+        gap.text = text;
+        described++;
+      }
+    } catch {
+      // A gap we cannot describe is still a gap worth marking.
+    }
+  }
+
+  say(`  ${described} of ${gaps.length} gaps have best-effort text`);
+  return gaps;
+}
+
 export async function transcribeChunked(options: ChunkedOptions): Promise<unknown> {
   const { apiKey, audioPath, duration, keyterms, cacheDir } = options;
   const say = options.onProgress ?? (() => {});
@@ -263,17 +306,28 @@ export async function transcribeChunked(options: ChunkedOptions): Promise<unknow
 
   const wholeFileWords = wordsOf(wholeFile).length;
   say(`whole-file pass: ${wholeFileWords} words; chunked: ${merged.length} words`);
-  if (merged.length < wholeFileWords) {
+
+  const best = merged.length < wholeFileWords ? wordsOf(wholeFile) : merged;
+  if (best !== merged) {
     // Never publish a worse transcript than the simple approach would give.
     say('  chunking did not improve coverage — keeping the whole-file result');
-    return wholeFile;
   }
 
+  const gaps = await probeGaps({
+    apiKey,
+    source: options.sourceAudio ?? audioPath,
+    words: best,
+    duration,
+    cacheDir,
+    say,
+  });
+
   return {
-    metadata: { duration, chunked: true, chunks: total },
+    metadata: { duration, chunked: best === merged, chunks: total },
     results: {
-      channels: [{ alternatives: [{ words: merged }] }],
+      channels: [{ alternatives: [{ words: best }] }],
       utterances: timeline,
+      gaps,
     },
   };
 }

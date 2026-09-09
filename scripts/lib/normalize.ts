@@ -11,6 +11,7 @@ import {
   DEFAULT_GROUPING,
   SCHEMA_VERSION,
   speakerId,
+  type Gap,
   type GroupingOptions,
   type Paragraph,
   type SourceWord,
@@ -103,10 +104,49 @@ export function groupIntoParagraphs(
   return paragraphs;
 }
 
+/** The minimum silence worth telling a reader about. */
+const GAP_VISIBLE_SECONDS = 10;
+
+/**
+ * Cleans best-effort gap text, or rejects it.
+ *
+ * The permissive model degenerates on low-information audio, looping a single
+ * token: one gap came back as "OK." twenty-five times. That is worse than
+ * saying nothing, because it looks like a rendering bug and tells the reader
+ * nothing about what they would hear.
+ */
+export function cleanUncertainText(text: string): string | undefined {
+  const tokens = text.trim().split(/\s+/).filter(Boolean);
+  if (tokens.length === 0) return undefined;
+
+  const key = (t: string) => t.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+  // Collapse runs of the same token down to one.
+  const collapsed: string[] = [];
+  for (const token of tokens) {
+    const previous = collapsed[collapsed.length - 1];
+    if (previous && key(previous) === key(token) && key(token).length > 0) continue;
+    collapsed.push(token);
+  }
+
+  // Even without adjacent repeats, a near-single-token result is noise.
+  const counts = new Map<string, number>();
+  for (const token of collapsed) counts.set(key(token), (counts.get(key(token)) ?? 0) + 1);
+  const commonest = Math.max(...counts.values());
+
+  if (collapsed.length < 5) return undefined;
+  if (commonest / collapsed.length > 0.35) return undefined;
+  // A handful of distinct words repeated in a loop is the same failure.
+  if (counts.size / collapsed.length < 0.4) return undefined;
+
+  return collapsed.join(' ');
+}
+
 export function buildTranscript(
   words: SourceWord[],
   duration: number,
   options: GroupingOptions = DEFAULT_GROUPING,
+  probedGaps: Gap[] = [],
 ): Transcript {
   const paragraphs = groupIntoParagraphs(sanitizeWords(words), options);
 
@@ -116,5 +156,21 @@ export function buildTranscript(
     (a, b) => Number(a.slice(3)) - Number(b.slice(3)),
   );
 
-  return { version: SCHEMA_VERSION, duration, speakers, paragraphs };
+  // Gaps are recomputed from the finished paragraphs rather than trusted from
+  // the probe, since corrections and grouping shift the boundaries. Probed
+  // text is attached to whichever gap it overlaps.
+  const gaps: Gap[] = [];
+  for (const [i, paragraph] of paragraphs.entries()) {
+    const next = paragraphs[i + 1];
+    if (!next) continue;
+    const start = paragraph.end;
+    const end = next.start;
+    if (end - start < GAP_VISIBLE_SECONDS) continue;
+
+    const probe = probedGaps.find((g) => g.text && g.start < end && g.end > start);
+    const text = probe?.text ? cleanUncertainText(probe.text) : undefined;
+    gaps.push(text ? { start, end, text } : { start, end });
+  }
+
+  return { version: SCHEMA_VERSION, duration, speakers, paragraphs, gaps };
 }

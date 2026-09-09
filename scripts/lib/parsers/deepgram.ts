@@ -7,7 +7,7 @@
  * code path.
  */
 
-import type { SourceWord } from '../schema.ts';
+import type { Gap, SourceWord } from '../schema.ts';
 
 interface DeepgramWord {
   word: string;
@@ -21,12 +21,14 @@ export interface DeepgramResponse {
   metadata?: { duration?: number };
   results?: {
     channels?: Array<{ alternatives?: Array<{ words?: DeepgramWord[] }> }>;
+    gaps?: Gap[];
   };
 }
 
 export function parseDeepgram(raw: DeepgramResponse): {
   words: SourceWord[];
   duration: number;
+  gaps: Gap[];
 } {
   const words = raw.results?.channels?.[0]?.alternatives?.[0]?.words;
   if (!words?.length) {
@@ -41,6 +43,7 @@ export function parseDeepgram(raw: DeepgramResponse): {
 
   return {
     duration,
+    gaps: raw.results?.gaps ?? [],
     words: words.map((w) => ({
       text: w.punctuated_word ?? w.word,
       start: w.start,
