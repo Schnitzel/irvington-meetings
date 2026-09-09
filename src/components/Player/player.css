@@ -1,0 +1,593 @@
+/*
+ * Player chrome. Global rather than scoped, because the script builds word
+ * spans, search marks and copy buttons at runtime.
+ *
+ * On small screens the player is a compact sticky bar and the transcript is
+ * the page (§9). On wide screens it stays pinned but has room to breathe.
+ */
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.player {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  margin: 1.5rem 0 0;
+  padding: 0.5rem 0 0.6rem;
+  background: color-mix(in srgb, var(--paper) 92%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--rule);
+}
+@supports not (backdrop-filter: blur(10px)) {
+  .player {
+    background: var(--paper);
+  }
+}
+
+.player__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-top: 0.5rem;
+}
+
+.player__transport {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.ctl {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: var(--paper-raised);
+  color: var(--ink);
+}
+.ctl:hover:not(:disabled) {
+  border-color: var(--rule-strong);
+  background: var(--paper-sunken);
+}
+.ctl:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.ctl svg {
+  width: 1.35rem;
+  height: 1.35rem;
+}
+/* The "15" sits inside the circular-arrow glyph. */
+.ctl__num {
+  position: absolute;
+  font-family: var(--font-ui);
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  top: 55%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.ctl--play {
+  width: 3rem;
+  height: 3rem;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+.ctl--play:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+.ctl--play svg {
+  width: 1.6rem;
+  height: 1.6rem;
+}
+/* Exactly one of the two glyphs is ever shown. */
+.ctl__icon-pause,
+.player.is-playing .ctl__icon-play {
+  display: none;
+}
+.player.is-playing .ctl__icon-pause {
+  display: block;
+}
+
+.player__time {
+  margin: 0 0 0 0.4rem;
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+.player__time-sep {
+  margin: 0 0.3rem;
+  opacity: 0.5;
+}
+
+.player__options {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  font-size: 0.875rem;
+}
+.speed {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--ink-soft);
+}
+.speed select {
+  font: inherit;
+  padding: 0.25rem 0.35rem;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  background: var(--paper-raised);
+  color: var(--ink);
+}
+.follow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+.follow input {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--accent);
+}
+/* Nudges the visitor when following has been suspended by manual scrolling. */
+.player.is-detached .follow {
+  color: var(--ink-faint);
+}
+
+/* --- Timeline ---------------------------------------------------------- */
+
+.player__timeline {
+  position: relative;
+  padding: 0.25rem 0 0;
+}
+.timeline {
+  position: relative;
+  padding: 0.6rem 0;
+  cursor: pointer;
+  touch-action: none;
+}
+.timeline__track {
+  position: relative;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--paper-sunken);
+  border: 1px solid var(--rule);
+}
+.timeline__buffered,
+.timeline__fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0;
+  border-radius: 999px;
+}
+.timeline__buffered {
+  background: var(--rule-strong);
+  opacity: 0.5;
+}
+.timeline__fill {
+  background: var(--accent);
+}
+.timeline__handle {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--paper);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+.timeline:focus-visible .timeline__handle {
+  box-shadow: 0 0 0 4px var(--accent-wash);
+}
+
+/*
+ * Search marks (§8) — the most useful feature in the build for a two-hour
+ * recording, so they sit above the track and stay tappable on a phone.
+ */
+.timeline__marks {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 9px;
+  pointer-events: none;
+}
+.timeline__mark {
+  pointer-events: auto;
+}
+.timeline__mark {
+  position: absolute;
+  top: 0;
+  width: 3px;
+  height: 9px;
+  margin-left: -1.5px;
+  padding: 0;
+  border: 0;
+  border-radius: 2px;
+  background: var(--mark-current);
+  cursor: pointer;
+}
+/* Widens the touch target without widening the visible mark. */
+.timeline__mark::after {
+  content: '';
+  position: absolute;
+  inset: -6px -5px;
+}
+.timeline__mark.is-current {
+  background: var(--accent);
+  height: 13px;
+  top: -4px;
+  width: 4px;
+}
+
+.timeline__hover {
+  position: absolute;
+  bottom: 100%;
+  transform: translateX(-50%);
+  padding: 0.15rem 0.4rem;
+  border-radius: 5px;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* --- Search ------------------------------------------------------------ */
+
+.player__search {
+  margin-top: 0.55rem;
+}
+.search {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.search__field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+.search__icon {
+  position: absolute;
+  left: 0.55rem;
+  width: 1rem;
+  height: 1rem;
+  color: var(--ink-faint);
+  pointer-events: none;
+}
+.search input {
+  font: inherit;
+  font-size: 0.9375rem;
+  width: 100%;
+  padding: 0.45rem 0.6rem 0.45rem 2rem;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--paper-raised);
+  color: var(--ink);
+}
+.search input::placeholder {
+  color: var(--ink-faint);
+}
+.search__nav {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.search__count {
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+  min-width: 3.5rem;
+  text-align: right;
+}
+.search__step,
+.search__clear {
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  background: var(--paper-raised);
+  color: var(--ink-soft);
+  line-height: 1;
+}
+.search__step:hover,
+.search__clear:hover {
+  background: var(--paper-sunken);
+  color: var(--ink);
+}
+
+/* --- Speaker legend ---------------------------------------------------- */
+
+.player__legend {
+  margin-top: 0.6rem;
+}
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.legend__item {
+  cursor: pointer;
+  opacity: 0.75;
+}
+.legend__item:hover,
+.legend__item.is-solo {
+  opacity: 1;
+}
+.legend__item.is-solo {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+.legend__hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.75rem;
+  color: var(--ink-faint);
+}
+
+/*
+ * Dimming everyone but the selected speaker (§8).
+ *
+ * Done with colour rather than opacity. Fading text to ~0.3 alpha reads well
+ * but drops it below 4.5:1, and a civic transcript is exactly the kind of
+ * document people need to be able to read. --ink-soft measures about 8:1 in
+ * both themes, so the de-emphasised turns recede and stay legible.
+ */
+.transcript.is-dimmed .para__text,
+.transcript.is-dimmed .para__time {
+  color: var(--ink-soft);
+}
+.transcript.is-dimmed .para {
+  border-left-color: var(--rule);
+}
+.transcript.is-dimmed .speaker-chip {
+  background: transparent;
+  border-color: var(--rule);
+  color: var(--ink-soft);
+  font-weight: 500;
+}
+
+/* The selected speaker keeps full contrast and their colour. */
+.transcript.is-dimmed[data-solo='spk0'] .para[data-speaker='spk0'] .para__text { color: var(--ink); }
+.transcript.is-dimmed[data-solo='spk0'] .para[data-speaker='spk0'] { border-left-color: hsl(var(--speaker-hue) 45% 72%); }
+.transcript.is-dimmed[data-solo='spk0'] .para[data-speaker='spk0'] .speaker-chip {
+  background: var(--speaker-wash);
+  border-color: var(--speaker-line);
+  color: var(--ink);
+  font-weight: 600;
+}
+.transcript.is-dimmed[data-solo='spk1'] .para[data-speaker='spk1'] .para__text { color: var(--ink); }
+.transcript.is-dimmed[data-solo='spk1'] .para[data-speaker='spk1'] { border-left-color: hsl(var(--speaker-hue) 45% 72%); }
+.transcript.is-dimmed[data-solo='spk1'] .para[data-speaker='spk1'] .speaker-chip {
+  background: var(--speaker-wash);
+  border-color: var(--speaker-line);
+  color: var(--ink);
+  font-weight: 600;
+}
+.transcript.is-dimmed[data-solo='spk2'] .para[data-speaker='spk2'] .para__text { color: var(--ink); }
+.transcript.is-dimmed[data-solo='spk2'] .para[data-speaker='spk2'] { border-left-color: hsl(var(--speaker-hue) 45% 72%); }
+.transcript.is-dimmed[data-solo='spk2'] .para[data-speaker='spk2'] .speaker-chip {
+  background: var(--speaker-wash);
+  border-color: var(--speaker-line);
+  color: var(--ink);
+  font-weight: 600;
+}
+.transcript.is-dimmed[data-solo='spk3'] .para[data-speaker='spk3'] .para__text { color: var(--ink); }
+.transcript.is-dimmed[data-solo='spk3'] .para[data-speaker='spk3'] { border-left-color: hsl(var(--speaker-hue) 45% 72%); }
+.transcript.is-dimmed[data-solo='spk3'] .para[data-speaker='spk3'] .speaker-chip {
+  background: var(--speaker-wash);
+  border-color: var(--speaker-line);
+  color: var(--ink);
+  font-weight: 600;
+}
+.transcript.is-dimmed[data-solo='spk4'] .para[data-speaker='spk4'] .para__text { color: var(--ink); }
+.transcript.is-dimmed[data-solo='spk4'] .para[data-speaker='spk4'] { border-left-color: hsl(var(--speaker-hue) 45% 72%); }
+.transcript.is-dimmed[data-solo='spk4'] .para[data-speaker='spk4'] .speaker-chip {
+  background: var(--speaker-wash);
+  border-color: var(--speaker-line);
+  color: var(--ink);
+  font-weight: 600;
+}
+.transcript.is-dimmed[data-solo='spk5'] .para[data-speaker='spk5'] .para__text { color: var(--ink); }
+.transcript.is-dimmed[data-solo='spk5'] .para[data-speaker='spk5'] { border-left-color: hsl(var(--speaker-hue) 45% 72%); }
+.transcript.is-dimmed[data-solo='spk5'] .para[data-speaker='spk5'] .speaker-chip {
+  background: var(--speaker-wash);
+  border-color: var(--speaker-line);
+  color: var(--ink);
+  font-weight: 600;
+}
+.transcript.is-dimmed[data-solo='spk6'] .para[data-speaker='spk6'] .para__text { color: var(--ink); }
+.transcript.is-dimmed[data-solo='spk6'] .para[data-speaker='spk6'] { border-left-color: hsl(var(--speaker-hue) 45% 72%); }
+.transcript.is-dimmed[data-solo='spk6'] .para[data-speaker='spk6'] .speaker-chip {
+  background: var(--speaker-wash);
+  border-color: var(--speaker-line);
+  color: var(--ink);
+  font-weight: 600;
+}
+.transcript.is-dimmed[data-solo='spk7'] .para[data-speaker='spk7'] .para__text { color: var(--ink); }
+.transcript.is-dimmed[data-solo='spk7'] .para[data-speaker='spk7'] { border-left-color: hsl(var(--speaker-hue) 45% 72%); }
+.transcript.is-dimmed[data-solo='spk7'] .para[data-speaker='spk7'] .speaker-chip {
+  background: var(--speaker-wash);
+  border-color: var(--speaker-line);
+  color: var(--ink);
+  font-weight: 600;
+}
+.transcript.is-dimmed[data-solo='spk8'] .para[data-speaker='spk8'] .para__text { color: var(--ink); }
+.transcript.is-dimmed[data-solo='spk8'] .para[data-speaker='spk8'] { border-left-color: hsl(var(--speaker-hue) 45% 72%); }
+.transcript.is-dimmed[data-solo='spk8'] .para[data-speaker='spk8'] .speaker-chip {
+  background: var(--speaker-wash);
+  border-color: var(--speaker-line);
+  color: var(--ink);
+  font-weight: 600;
+}
+.transcript.is-dimmed[data-solo='spk9'] .para[data-speaker='spk9'] .para__text { color: var(--ink); }
+.transcript.is-dimmed[data-solo='spk9'] .para[data-speaker='spk9'] { border-left-color: hsl(var(--speaker-hue) 45% 72%); }
+.transcript.is-dimmed[data-solo='spk9'] .para[data-speaker='spk9'] .speaker-chip {
+  background: var(--speaker-wash);
+  border-color: var(--speaker-line);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+@media (prefers-color-scheme: dark) {
+  .transcript.is-dimmed[data-solo='spk0'] .para[data-speaker='spk0'] { border-left-color: hsl(var(--speaker-hue) 35% 40%); }
+  .transcript.is-dimmed[data-solo='spk1'] .para[data-speaker='spk1'] { border-left-color: hsl(var(--speaker-hue) 35% 40%); }
+  .transcript.is-dimmed[data-solo='spk2'] .para[data-speaker='spk2'] { border-left-color: hsl(var(--speaker-hue) 35% 40%); }
+  .transcript.is-dimmed[data-solo='spk3'] .para[data-speaker='spk3'] { border-left-color: hsl(var(--speaker-hue) 35% 40%); }
+  .transcript.is-dimmed[data-solo='spk4'] .para[data-speaker='spk4'] { border-left-color: hsl(var(--speaker-hue) 35% 40%); }
+  .transcript.is-dimmed[data-solo='spk5'] .para[data-speaker='spk5'] { border-left-color: hsl(var(--speaker-hue) 35% 40%); }
+  .transcript.is-dimmed[data-solo='spk6'] .para[data-speaker='spk6'] { border-left-color: hsl(var(--speaker-hue) 35% 40%); }
+  .transcript.is-dimmed[data-solo='spk7'] .para[data-speaker='spk7'] { border-left-color: hsl(var(--speaker-hue) 35% 40%); }
+  .transcript.is-dimmed[data-solo='spk8'] .para[data-speaker='spk8'] { border-left-color: hsl(var(--speaker-hue) 35% 40%); }
+  .transcript.is-dimmed[data-solo='spk9'] .para[data-speaker='spk9'] { border-left-color: hsl(var(--speaker-hue) 35% 40%); }
+}
+
+/* --- Words, highlighting, copy link ------------------------------------ */
+
+.para.is-current {
+  background: var(--now);
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+/*
+ * --ink-faint is tuned for the page background and drops below 4.5:1 on the
+ * highlighted one. --ink-soft measures 5.5:1 (dark) and 6.3:1 (light) here.
+ */
+.para.is-current .para__time {
+  color: var(--ink-soft);
+}
+
+.word {
+  border-radius: 3px;
+  cursor: pointer;
+}
+.word:hover {
+  background: var(--accent-wash);
+  box-shadow: 0 1px 0 var(--accent);
+}
+.word--now {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.word--hit {
+  background: var(--mark);
+  color: var(--ink);
+}
+.word--hit-current {
+  background: var(--mark-current);
+  color: #16191d;
+  box-shadow: 0 0 0 2px var(--mark-current);
+}
+
+.para__copy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: baseline;
+  width: 1.6rem;
+  height: 1.4rem;
+  margin-left: 0.25rem;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--ink-faint);
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+.para__copy svg {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+.para:hover .para__copy,
+.para__copy:focus-visible,
+.para__copy.is-copied {
+  opacity: 1;
+}
+.para__copy:hover {
+  background: var(--paper-sunken);
+  color: var(--accent);
+}
+.para__copy.is-copied {
+  color: var(--accent);
+}
+/* Touch devices have no hover, so the control is always faintly present. */
+@media (hover: none) {
+  .para__copy {
+    opacity: 0.5;
+  }
+}
+
+.player__status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+/* --- Compact on phones ------------------------------------------------- */
+
+@media (max-width: 34rem) {
+  .player {
+    padding-bottom: 0.45rem;
+  }
+  .player__row {
+    gap: 0.35rem 0.5rem;
+  }
+  .ctl {
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+  .ctl--play {
+    width: 2.6rem;
+    height: 2.6rem;
+  }
+  .speed__label {
+    display: none;
+  }
+  .legend__hint {
+    display: none;
+  }
+  .player__legend {
+    /* The legend scrolls sideways rather than stacking into a tall block. */
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .legend {
+    flex-wrap: nowrap;
+  }
+}

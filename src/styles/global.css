@@ -1,0 +1,219 @@
+/*
+ * Irvington Meetings — global styles.
+ *
+ * Mobile-first. The transcript is the page (§9); the player is furniture
+ * around it. Colours are defined once as tokens on :root and only their
+ * values change for dark mode, so contrast can be reasoned about in one place.
+ * Every pairing below meets WCAG AA against its background.
+ */
+
+:root {
+  color-scheme: light dark;
+
+  --ink: #16191d;
+  --ink-soft: #4a5058;
+  --ink-faint: #6b727c;
+  --paper: #fdfdfc;
+  --paper-raised: #ffffff;
+  --paper-sunken: #f1f0ed;
+  --rule: #d9d7d2;
+  --rule-strong: #b4b1aa;
+
+  /* Deep civic blue. 7.1:1 on --paper. */
+  --accent: #14507d;
+  --accent-hover: #0d3a5c;
+  --on-accent: #ffffff;
+  --accent-wash: #e3edf5;
+
+  /* Search hits. Amber wash keeps 12:1 with --ink on top. */
+  --mark: #ffe08a;
+  --mark-current: #ff9d2e;
+  --now: #cfe6f7;
+
+  --font-body: ui-serif, Georgia, "Times New Roman", serif;
+  --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  --measure: 38rem;
+  --radius: 8px;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #e8e6e2;
+    --ink-soft: #b3b0aa;
+    --ink-faint: #8d8a84;
+    --paper: #16181b;
+    --paper-raised: #1e2125;
+    --paper-sunken: #24272c;
+    --rule: #343840;
+    --rule-strong: #4c515a;
+
+    /* Lightened for dark backgrounds: 8.2:1 on --paper. */
+    --accent: #7cc0ee;
+    --accent-hover: #a3d4f5;
+    --on-accent: #0b1620;
+    --accent-wash: #1c2c39;
+
+    --mark: #6b551d;
+    --mark-current: #b57414;
+    --now: #1f3a4d;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/*
+ * The user-agent [hidden] rule loses to any author `display` declaration, so
+ * `.search__nav { display: flex }` was showing elements the script had hidden.
+ * Restate it as an author rule that wins.
+ */
+[hidden] {
+  display: none !important;
+}
+
+html {
+  /* Anchors land below the sticky player rather than under it. */
+  scroll-padding-top: 6rem;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  -webkit-text-size-adjust: 100%;
+}
+
+h1,
+h2,
+h3 {
+  line-height: 1.25;
+  text-wrap: balance;
+}
+
+a {
+  color: var(--accent);
+  text-underline-offset: 0.15em;
+}
+a:hover {
+  color: var(--accent-hover);
+}
+
+/* A single, unmistakable focus ring everywhere (§9). */
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.wrap {
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+.wrap--wide {
+  max-width: 52rem;
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  background: var(--accent);
+  color: var(--on-accent);
+  padding: 0.75rem 1rem;
+  border-radius: 0 0 var(--radius) 0;
+}
+.skip-link:focus {
+  left: 0;
+}
+
+/* --- Site chrome ------------------------------------------------------- */
+
+.masthead {
+  border-bottom: 1px solid var(--rule);
+  background: var(--paper-raised);
+}
+.masthead__inner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  align-items: baseline;
+  padding-block: 0.85rem;
+}
+.masthead__title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+.masthead__title a {
+  color: inherit;
+  text-decoration: none;
+}
+.masthead__title a:hover {
+  color: var(--accent);
+}
+.masthead__tag {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--ink-faint);
+}
+
+.site-foot {
+  margin-top: 4rem;
+  padding-block: 2rem 3rem;
+  border-top: 1px solid var(--rule);
+  font-size: 0.875rem;
+  color: var(--ink-soft);
+}
+.site-foot p {
+  margin: 0 0 0.6rem;
+}
+
+/* --- Disclaimer (§7) --------------------------------------------------- */
+
+.disclaimer {
+  margin: 1.5rem 0;
+  padding: 0.9rem 1rem;
+  background: var(--paper-sunken);
+  border-left: 3px solid var(--rule-strong);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+.disclaimer strong {
+  color: var(--ink);
+}
+.disclaimer p {
+  margin: 0 0 0.5rem;
+}
+.disclaimer p:last-child {
+  margin-bottom: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

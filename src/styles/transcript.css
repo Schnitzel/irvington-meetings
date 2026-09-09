@@ -1,0 +1,212 @@
+/*
+ * The recording page: header, disclaimer, and the transcript itself.
+ *
+ * These are global rather than Astro-scoped on purpose — the player builds
+ * per-word spans and search marks at runtime, and dynamically created
+ * elements never receive Astro's scoping attribute.
+ */
+
+.recording__head {
+  padding-top: 2rem;
+}
+.recording__body-name {
+  margin: 0 0 0.35rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.recording__title {
+  margin: 0 0 0.5rem;
+  font-size: clamp(1.6rem, 5vw, 2.35rem);
+  letter-spacing: -0.02em;
+}
+.recording__facts {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.9375rem;
+}
+.recording__desc {
+  margin: 0.9rem 0 0;
+  font-family: var(--font-body);
+  font-size: 1.0625rem;
+  color: var(--ink-soft);
+  max-width: var(--measure);
+}
+
+.recording__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  align-items: center;
+  margin: 1.25rem 0 0;
+  font-size: 0.9375rem;
+}
+.download {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.85rem;
+  background: var(--accent);
+  color: var(--on-accent);
+  border-radius: var(--radius);
+  text-decoration: none;
+  font-weight: 550;
+}
+.download:hover {
+  background: var(--accent-hover);
+  color: var(--on-accent);
+}
+.download__size {
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+/* --- No-JS fallback ---------------------------------------------------- */
+
+.fallback-player {
+  margin: 1.5rem 0 0;
+}
+.fallback-player__audio {
+  width: 100%;
+}
+.fallback-player__note {
+  margin: 0.5rem 0 0;
+  font-size: 0.875rem;
+  color: var(--ink-faint);
+}
+
+/* --- Speakers ---------------------------------------------------------- */
+
+.speakers {
+  margin: 2rem 0 0;
+}
+.speakers__heading {
+  margin: 0 0 0.6rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.speakers__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/*
+ * Speaker colours. Each is a left border and a tinted label rather than
+ * coloured body text, so contrast never depends on the hue — colour is a
+ * secondary cue and the name is always spelled out (§9, WCAG AA).
+ */
+.speaker-chip {
+  display: inline-block;
+  padding: 0.1rem 0.5rem 0.15rem;
+  border-radius: 999px;
+  background: var(--speaker-wash, var(--paper-sunken));
+  border: 1px solid var(--speaker-line, var(--rule));
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.speaker-chip--spk0, .para[data-speaker='spk0'] { --speaker-hue: 205; }
+.speaker-chip--spk1, .para[data-speaker='spk1'] { --speaker-hue: 145; }
+.speaker-chip--spk2, .para[data-speaker='spk2'] { --speaker-hue: 275; }
+.speaker-chip--spk3, .para[data-speaker='spk3'] { --speaker-hue: 25;  }
+.speaker-chip--spk4, .para[data-speaker='spk4'] { --speaker-hue: 340; }
+.speaker-chip--spk5, .para[data-speaker='spk5'] { --speaker-hue: 175; }
+.speaker-chip--spk6, .para[data-speaker='spk6'] { --speaker-hue: 55;  }
+.speaker-chip--spk7, .para[data-speaker='spk7'] { --speaker-hue: 240; }
+.speaker-chip--spk8, .para[data-speaker='spk8'] { --speaker-hue: 100; }
+.speaker-chip--spk9, .para[data-speaker='spk9'] { --speaker-hue: 310; }
+
+.speaker-chip {
+  --speaker-wash: hsl(var(--speaker-hue, 205) 55% 93%);
+  --speaker-line: hsl(var(--speaker-hue, 205) 40% 78%);
+}
+@media (prefers-color-scheme: dark) {
+  .speaker-chip {
+    --speaker-wash: hsl(var(--speaker-hue, 205) 30% 22%);
+    --speaker-line: hsl(var(--speaker-hue, 205) 30% 38%);
+  }
+}
+
+/* --- Transcript -------------------------------------------------------- */
+
+.transcript__heading {
+  margin: 2.5rem 0 0;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--rule);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.transcript {
+  margin-top: 1rem;
+  font-family: var(--font-body);
+  font-size: 1.125rem;
+  line-height: 1.68;
+}
+
+.para {
+  position: relative;
+  padding: 0.15rem 0 0.15rem 0.9rem;
+  border-left: 3px solid transparent;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+.para[data-speaker] {
+  border-left-color: hsl(var(--speaker-hue, 205) 45% 72%);
+}
+@media (prefers-color-scheme: dark) {
+  .para[data-speaker] {
+    border-left-color: hsl(var(--speaker-hue, 205) 35% 40%);
+  }
+}
+
+.para__speaker {
+  margin: 1.25rem 0 0.35rem;
+  font-family: var(--font-ui);
+}
+.para:first-child .para__speaker {
+  margin-top: 0.25rem;
+}
+
+.para__body {
+  margin: 0 0 0.85rem;
+}
+
+/*
+ * The timestamp sits in the left margin on wide screens and inline on narrow
+ * ones, so it never steals width from the text on a phone.
+ */
+.para__time {
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-faint);
+  text-decoration: none;
+  margin-right: 0.5rem;
+}
+.para__time:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+@media (min-width: 60rem) {
+  .para__time {
+    position: absolute;
+    left: -3.75rem;
+    margin-right: 0;
+    padding-top: 0.35rem;
+  }
+}

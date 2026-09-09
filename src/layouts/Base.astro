@@ -1,0 +1,57 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+  /** Wider column for the recording page, which carries the player. */
+  wide?: boolean;
+}
+
+const { title, description, wide = false } = Astro.props;
+const siteName = 'Irvington Meetings';
+const fullTitle = title === siteName ? title : `${title} — ${siteName}`;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    {description && <meta name="description" content={description} />}
+    <meta property="og:title" content={fullTitle} />
+    {description && <meta property="og:description" content={description} />}
+    <meta property="og:type" content="website" />
+    <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} />
+  </head>
+
+  <body>
+    <a class="skip-link" href="#main">Skip to the transcript</a>
+
+    <header class="masthead">
+      <div class={wide ? 'wrap wrap--wide masthead__inner' : 'wrap masthead__inner'}>
+        <p class="masthead__title"><a href="/">{siteName}</a></p>
+        <p class="masthead__tag">Recordings and transcripts of public meetings</p>
+      </div>
+    </header>
+
+    <main id="main">
+      <slot />
+    </main>
+
+    <footer class="site-foot">
+      <div class={wide ? 'wrap wrap--wide' : 'wrap'}>
+        <p>
+          An independent, volunteer-run archive of public meetings in Irvington,
+          Virginia. Not affiliated with, or endorsed by, the Town of Irvington
+          or any public body.
+        </p>
+        <p>
+          Recordings are published as a public service. The audio recording is
+          the authoritative record.
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "name": "irvington-meetings",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "prepare-meeting": "node --experimental-strip-types scripts/prepare.ts",
+    "renormalize": "node --experimental-strip-types scripts/renormalize.ts"
+  },
+  "dependencies": {
+    "astro": "^7.3.2"
+  }
+}

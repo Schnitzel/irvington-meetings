@@ -1,0 +1,61 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  # Lets you re-deploy from the Actions tab without pushing a commit.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# A run in progress finishes rather than being cancelled, so a deploy is
+# never left half-applied.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # A stable release. The pipeline scripts run on the owner's laptop,
+          # not here — CI only ever builds the site.
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build
+        run: npx astro build
+
+      # The audio lives on the Internet Archive; a stray copy here would mean
+      # a 50 MB artifact per meeting for files nothing links to.
+      - name: Check no audio slipped into the build
+        run: |
+          if find dist -name '*.m4a' -o -name '*.mp3' | grep -q .; then
+            echo "::error::Audio files found in dist/. They belong on the Internet Archive."
+            find dist -name '*.m4a' -o -name '*.mp3'
+            exit 1
+          fi
+          echo "dist/ is $(du -sh dist | cut -f1)"
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,18 @@
+node_modules/
+dist/
+.astro/
+
+# Secrets — never commit
+.env
+.env.local
+
+# Cached Deepgram responses: large, regenerable, and paid for once.
+# Kept on the owner's laptop so renormalize is free (§5 step 3).
+content/*/.deepgram-raw.json
+
+# Published audio lives on the Internet Archive, not in git.
+# prepare.ts writes it here as the upload source only.
+content/*/audio.m4a
+
+# Local dev copies of audio; the published files live on the Internet Archive.
+public/audio/

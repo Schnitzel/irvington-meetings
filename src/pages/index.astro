@@ -1,0 +1,82 @@
+---
+/**
+ * The index (brief §7): every published recording, newest first, plus a
+ * search box that reaches across all of them.
+ */
+import Base from '../layouts/Base.astro';
+import '../styles/index.css';
+import {
+  describeDuration,
+  formatDate,
+  getMeetings,
+} from '../lib/content.ts';
+
+const meetings = getMeetings();
+---
+
+<Base
+  title="Irvington Meetings"
+  description="Recordings and searchable transcripts of public meetings in Irvington, Virginia."
+>
+  <div class="wrap">
+    <div class="intro">
+      <h1 class="intro__title">Public meetings, in full</h1>
+      <p class="intro__lede">
+        Recordings of public meetings in Irvington, Virginia, each with a
+        searchable transcript you can read along with. Nothing to sign up for.
+      </p>
+    </div>
+
+    <section class="site-search" aria-labelledby="site-search-heading">
+      <h2 class="visually-hidden" id="site-search-heading">Search every meeting</h2>
+      <label class="site-search__field">
+        <span class="visually-hidden">Search across every meeting</span>
+        <svg class="site-search__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M10 2a8 8 0 1 0 4.9 14.3l5.4 5.4 1.4-1.4-5.4-5.4A8 8 0 0 0 10 2zm0 2a6 6 0 1 1 0 12 6 6 0 0 1 0-12z" fill="currentColor"/>
+        </svg>
+        <input
+          type="search"
+          id="site-search"
+          data-site-search
+          placeholder="Search across every meeting"
+          autocomplete="off"
+          spellcheck="false"
+        />
+      </label>
+      <p class="site-search__status" data-search-status role="status" aria-live="polite"></p>
+      <div class="results" data-results hidden></div>
+    </section>
+
+    {meetings.length === 0 ? (
+      <p class="empty">
+        No recordings have been published yet.
+      </p>
+    ) : (
+      <section class="listing" data-listing aria-labelledby="listing-heading">
+        <h2 class="listing__heading" id="listing-heading">
+          {meetings.length} recording{meetings.length === 1 ? '' : 's'}
+        </h2>
+        <ul class="listing__items">
+          {meetings.map((m) => (
+            <li class="meeting">
+              <p class="meeting__body-name">{m.meta.body}</p>
+              <h3 class="meeting__title">
+                <a href={`/${m.slug}`}>{m.meta.title}</a>
+              </h3>
+              <p class="meeting__facts">
+                <time datetime={m.meta.date}>{formatDate(m.meta.date)}</time>
+                <span aria-hidden="true"> · </span>
+                <span>{describeDuration(m.transcript.duration)}</span>
+              </p>
+              {m.meta.description && <p class="meeting__desc">{m.meta.description}</p>}
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
+  </div>
+
+  <script>
+    import '../lib/site-search.ts';
+  </script>
+</Base>
