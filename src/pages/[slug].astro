@@ -127,6 +127,11 @@ const speakerList = groups.map((g) => ({ id: g.id, name: g.name }));
             {meta.packet.label}
           </a>
         )}
+        {meta.source && (
+          <a class="recording__link" href={meta.source.url} rel="noopener">
+            {meta.source.label}
+          </a>
+        )}
       </div>
 
       <aside class="disclaimer">

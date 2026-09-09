@@ -9,7 +9,8 @@
     "preview": "astro preview",
     "prepare-meeting": "node --experimental-strip-types scripts/prepare.ts",
     "renormalize": "node --experimental-strip-types scripts/renormalize.ts",
-    "probe-gaps": "node --experimental-strip-types scripts/probe-gaps.ts"
+    "probe-gaps": "node --experimental-strip-types scripts/probe-gaps.ts",
+    "suggest-speakers": "node --experimental-strip-types scripts/suggest-speakers.ts"
   },
   "dependencies": {
     "astro": "^7.3.2"

@@ -43,6 +43,12 @@ export interface Meta {
   audio: { bytes: number; duration: number };
   /** Optional agenda packet or supporting document. */
   packet: { label: string; url: string } | null;
+  /**
+   * The official page this recording came from, when there is one. Linking it
+   * sends people to the authoritative record and its documents, and makes
+   * clear this archive is not that record.
+   */
+  source?: { label: string; url: string } | null;
 }
 
 export function contentDir(slug: string): string {
@@ -152,6 +158,7 @@ export async function normalizeSlug(
       archive: { item: options.metaDefaults?.archive?.item ?? null, file: 'audio.m4a' },
       audio: { bytes: options.audioBytes ?? 0, duration },
       packet: null,
+      source: options.metaDefaults?.source ?? null,
     };
     await writeJson(metaPath, meta);
     scaffolded.push('meta.json');

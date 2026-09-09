@@ -45,6 +45,7 @@ const { values } = parseArgs({
     date: { type: 'string' },
     body: { type: 'string' },
     description: { type: 'string' },
+    source: { type: 'string' },
     transcript: { type: 'string' },
     'no-compress': { type: 'boolean', default: false },
     'no-normalize': { type: 'boolean', default: false },
@@ -65,6 +66,8 @@ Usage: npm run prepare-meeting -- --input <file> --slug <slug> [options]
   --date <YYYY-MM-DD>   Meeting date.
   --body <name>         The public body, e.g. "Irvington Town Council".
   --description <text>  One-line description for the index page.
+  --source <url>        Official page this recording came from, linked from
+                        the recording page.
 
   --transcript <file>   Use an existing SRT/VTT/Whisper JSON instead of
                         transcribing (skips Deepgram entirely).
@@ -192,6 +195,9 @@ try {
       date: values.date,
       body: values.body,
       description: values.description,
+      source: values.source
+        ? { label: 'Agenda, minutes and documents at irvingtonva.gov', url: values.source }
+        : null,
     },
   });
   console.log(
