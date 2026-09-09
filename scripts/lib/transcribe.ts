@@ -37,6 +37,15 @@ export const CHUNK_SECONDS = 300;
 /** Context included on each side, then discarded, so words are not clipped. */
 export const CHUNK_PAD = 15;
 
+/**
+ * Stretches longer than this with no words at all get a second, harder
+ * attempt. Most turn out to be audience questions asked away from the
+ * recorder, which the first pass classifies as non-speech.
+ */
+export const GAP_RETRY_SECONDS = 10;
+/** Don't bother re-attempting a gap longer than this; it really is a break. */
+export const GAP_MAX_SECONDS = 240;
+
 interface DeepgramWord {
   word: string;
   punctuated_word?: string;
@@ -113,6 +122,80 @@ export interface ChunkedOptions {
  * Returns a Deepgram-shaped response so everything downstream — the parser,
  * the normalizer, renormalize — keeps working unchanged.
  */
+/**
+ * Re-attempts every stretch that came back with no words.
+ *
+ * Cheap, because it only pays for the silent stretches themselves, and it
+ * targets exactly the content a civic transcript can least afford to lose:
+ * residents asking questions. Words are appended in place, so a gap that
+ * genuinely is a pause simply yields nothing.
+ */
+async function rescueGaps(options: {
+  apiKey: string;
+  source: string;
+  words: DeepgramWord[];
+  duration: number;
+  keyterms: string[];
+  cacheDir: string;
+  timeline: Utterance[];
+  say: (message: string) => void;
+}): Promise<number> {
+  const { apiKey, source, words, duration, keyterms, cacheDir, timeline, say } = options;
+
+  const gaps: Array<{ start: number; end: number }> = [];
+  for (let i = 1; i < words.length; i++) {
+    const start = words[i - 1].end;
+    const end = words[i].start;
+    const length = end - start;
+    if (length >= GAP_RETRY_SECONDS && length <= GAP_MAX_SECONDS) gaps.push({ start, end });
+  }
+  // The recording may also start or end with an unheard stretch.
+  if (words.length > 0) {
+    if (words[0].start >= GAP_RETRY_SECONDS) gaps.unshift({ start: 0, end: words[0].start });
+    const tail = duration - words[words.length - 1].end;
+    if (tail >= GAP_RETRY_SECONDS && tail <= GAP_MAX_SECONDS) {
+      gaps.push({ start: words[words.length - 1].end, end: duration });
+    }
+  }
+
+  if (gaps.length === 0) return 0;
+  const totalSeconds = gaps.reduce((sum, g) => sum + (g.end - g.start), 0);
+  say(`second pass over ${gaps.length} silent stretches (${(totalSeconds / 60).toFixed(1)} min)…`);
+
+  let recovered = 0;
+
+  for (const [i, gap] of gaps.entries()) {
+    const path = join(cacheDir, `gap-${String(i).padStart(3, '0')}.m4a`);
+    // A couple of seconds either side, so a word straddling the edge is whole.
+    const { offset } = await sliceAudio(source, path, gap.start, gap.end - gap.start, 2, {
+      rescue: true,
+    });
+
+    let response: unknown;
+    try {
+      response = await transcribe(apiKey, await readFile(path), keyterms);
+    } catch (error) {
+      // One hard window is not worth failing the whole run over.
+      say(`  gap at ${Math.floor(gap.start / 60)}min failed: ${(error as Error).message}`);
+      continue;
+    }
+
+    const found = wordsOf(response)
+      .map((w) => ({ ...w, start: w.start + offset, end: w.end + offset }))
+      // Strictly inside the gap, so this never contradicts the first pass.
+      .filter((w) => w.start >= gap.start && w.end <= gap.end)
+      .map((w) => ({ ...w, speaker: speakerAt(timeline, w.start) }));
+
+    if (found.length > 0) {
+      words.push(...found);
+      recovered += found.length;
+    }
+  }
+
+  say(`  recovered ${recovered} words from ${gaps.length} stretches`);
+  return recovered;
+}
+
 export async function transcribeChunked(options: ChunkedOptions): Promise<unknown> {
   const { apiKey, audioPath, duration, keyterms, cacheDir } = options;
   const say = options.onProgress ?? (() => {});
@@ -164,6 +247,19 @@ export async function transcribeChunked(options: ChunkedOptions): Promise<unknow
   }
 
   merged.sort((a, b) => a.start - b.start);
+
+  // --- Second pass over whatever came back empty -------------------------
+  const rescued = await rescueGaps({
+    apiKey,
+    source: options.sourceAudio ?? audioPath,
+    words: merged,
+    duration,
+    keyterms,
+    cacheDir,
+    timeline,
+    say,
+  });
+  if (rescued > 0) merged.sort((a, b) => a.start - b.start);
 
   const wholeFileWords = wordsOf(wholeFile).length;
   say(`whole-file pass: ${wholeFileWords} words; chunked: ${merged.length} words`);

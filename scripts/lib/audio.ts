@@ -73,6 +73,17 @@ export async function probeDuration(path: string): Promise<number> {
  */
 const NORMALIZE_FILTER = 'dynaudnorm=f=250:g=15:p=0.9';
 
+/*
+ * A harder treatment, used only for re-attempting stretches that came back
+ * empty. Those are mostly audience questions asked away from the recorder:
+ * they are not quieter than the speech around them (-31.6 dB against -31.7
+ * dB for the transcribed passage beside one), they are reverberant, and
+ * Deepgram classifies them as non-speech. A high-pass removes room rumble
+ * before the gain stages lift what is left.
+ */
+const RESCUE_FILTER =
+  'highpass=f=80,dynaudnorm=f=200:g=21:p=0.95,loudnorm=I=-16:TP=-1.5:LRA=11';
+
 export async function compress(
   input: string,
   output: string,
@@ -110,7 +121,7 @@ export async function sliceAudio(
   start: number,
   duration: number,
   pad: number,
-  options: { normalize?: boolean } = {},
+  options: { normalize?: boolean; rescue?: boolean } = {},
 ): Promise<{ offset: number }> {
   const from = Math.max(0, start - pad);
   const { code, stderr } = await run('ffmpeg', [
@@ -124,10 +135,15 @@ export async function sliceAudio(
     // the whole 110-minute file, loud passages hold the quiet ones down.
     // Recomputed per window it lifts them, which recovered 27% more words at
     // identical mean loudness (-15.0 dB either way).
-    ...(options.normalize ? ['-af', NORMALIZE_FILTER] : []),
+    ...(options.rescue
+      ? ['-af', RESCUE_FILTER]
+      : options.normalize
+        ? ['-af', NORMALIZE_FILTER]
+        : []),
     '-ac', '1',
     '-c:a', 'aac',
-    '-b:a', '64k',
+    // A little more headroom for the rescue pass; these are the hard windows.
+    '-b:a', options.rescue ? '96k' : '64k',
     output,
   ]);
 
