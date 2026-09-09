@@ -69,7 +69,7 @@ Usage: npm run prepare-meeting -- --input <file> --slug <slug> [options]
   process.exit(1);
 }
 
-if (values.help || !values.slug || (!values.input && !values.transcript)) usage();
+if (values.help || !values.slug) usage();
 
 const slug = values.slug!;
 if (!/^[a-z0-9][a-z0-9-]*$/.test(slug)) {
@@ -87,6 +87,13 @@ const expand = (path: string): string =>
 
 const dir = contentDir(slug);
 const audioPath = join(dir, 'audio.m4a');
+
+// --input may be omitted once a directory already holds its compressed audio,
+// so the later steps (re-normalizing, uploading) can be re-run on their own.
+if (!values.input && !values.transcript && !existsSync(audioPath)) {
+  console.error(`✗ ${audioPath} does not exist, so --input is required.`);
+  process.exit(1);
+}
 const rawPath = join(dir, RAW_FILE);
 const keytermsPath = join(dir, 'keyterms.txt');
 
