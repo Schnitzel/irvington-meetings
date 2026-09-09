@@ -24,7 +24,7 @@ files.
 
 | What | Where | Why |
 | --- | --- | --- |
-| The site | GitHub Pages | Free, and it only serves ~600 KB |
+| The site | Cloudflare Pages | Free, fast, and it comes with analytics |
 | The audio | Internet Archive | Free, permanent, and it serves HTTP 206 range requests so scrubbing works |
 | Transcripts | In this repo | Small (about 100 KB gzipped per meeting) and worth version control |
 | Speaker names | `speakers.json` | Several diarized ids may map to one name; the site groups by name |
@@ -141,10 +141,15 @@ if any audio file reaches `dist/`.
 - **The npm script is `prepare-meeting`, not `prepare`.** npm treats a script
   literally named `prepare` as a lifecycle hook and runs it on every
   `npm install`.
-- **`public/.nojekyll` is load-bearing.** GitHub Pages runs Jekyll, which
-  silently strips directories beginning with an underscore — including
-  Astro's `_astro/`. Without that file the site deploys and every stylesheet
-  404s.
+- **`public/.nojekyll` and `public/CNAME` are GitHub Pages leftovers.** They
+  are harmless on Cloudflare and are kept only so the old GitHub Pages
+  deployment keeps binding the domain during the DNS switch. Delete them once
+  the nameservers have moved. (For the record: `.nojekyll` was load-bearing
+  there — GitHub Pages runs Jekyll, which silently strips directories
+  beginning with an underscore, including Astro's `_astro/`.)
+- **Cloudflare Pages caps individual files at 25 MiB.** Another reason the
+  audio lives on the Internet Archive; CI fails the build if any reaches
+  `dist/`.
 - **Per-word `<span>`s are built on demand.** Only the paragraph currently
   playing and paragraphs containing a search hit get them; everything else
   stays a single text node. A dense two-hour meeting would otherwise put

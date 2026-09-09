@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages
+name: Deploy to Cloudflare Pages
 
 on:
   push:
@@ -8,8 +8,6 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 # A run in progress finishes rather than being cancelled, so a deploy is
 # never left half-applied.
@@ -18,7 +16,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -35,8 +33,9 @@ jobs:
       - name: Build
         run: npx astro build
 
-      # The audio lives on the Internet Archive; a stray copy here would mean
-      # a 50 MB artifact per meeting for files nothing links to.
+      # The audio lives on the Internet Archive. Cloudflare Pages also caps
+      # individual files at 25 MiB, so a stray recording would fail the
+      # upload rather than merely bloating it.
       - name: Check no audio slipped into the build
         run: |
           if find dist -name '*.m4a' -o -name '*.mp3' | grep -q .; then
@@ -46,16 +45,9 @@ jobs:
           fi
           echo "dist/ is $(du -sh dist | cut -f1)"
 
-      - uses: actions/upload-pages-artifact@v3
+      - name: Deploy
+        uses: cloudflare/wrangler-action@v3
         with:
-          path: dist
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=irvington-meetings --branch=main
