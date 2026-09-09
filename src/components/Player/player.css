@@ -381,81 +381,81 @@
 }
 
 /* The selected speaker keeps full contrast and their colour. */
-.transcript.is-dimmed[data-solo='spk0'] .para[data-speaker='spk0'] .para__text { color: var(--ink); }
-.transcript.is-dimmed[data-solo='spk0'] .para[data-speaker='spk0'] { border-left-color: hsl(var(--speaker-hue) 45% 72%); }
-.transcript.is-dimmed[data-solo='spk0'] .para[data-speaker='spk0'] .speaker-chip {
+.transcript.is-dimmed[data-solo='g0'] .para[data-speaker='g0'] .para__text { color: var(--ink); }
+.transcript.is-dimmed[data-solo='g0'] .para[data-speaker='g0'] { border-left-color: hsl(var(--speaker-hue) 45% 72%); }
+.transcript.is-dimmed[data-solo='g0'] .para[data-speaker='g0'] .speaker-chip {
   background: var(--speaker-wash);
   border-color: var(--speaker-line);
   color: var(--ink);
   font-weight: 600;
 }
-.transcript.is-dimmed[data-solo='spk1'] .para[data-speaker='spk1'] .para__text { color: var(--ink); }
-.transcript.is-dimmed[data-solo='spk1'] .para[data-speaker='spk1'] { border-left-color: hsl(var(--speaker-hue) 45% 72%); }
-.transcript.is-dimmed[data-solo='spk1'] .para[data-speaker='spk1'] .speaker-chip {
+.transcript.is-dimmed[data-solo='g1'] .para[data-speaker='g1'] .para__text { color: var(--ink); }
+.transcript.is-dimmed[data-solo='g1'] .para[data-speaker='g1'] { border-left-color: hsl(var(--speaker-hue) 45% 72%); }
+.transcript.is-dimmed[data-solo='g1'] .para[data-speaker='g1'] .speaker-chip {
   background: var(--speaker-wash);
   border-color: var(--speaker-line);
   color: var(--ink);
   font-weight: 600;
 }
-.transcript.is-dimmed[data-solo='spk2'] .para[data-speaker='spk2'] .para__text { color: var(--ink); }
-.transcript.is-dimmed[data-solo='spk2'] .para[data-speaker='spk2'] { border-left-color: hsl(var(--speaker-hue) 45% 72%); }
-.transcript.is-dimmed[data-solo='spk2'] .para[data-speaker='spk2'] .speaker-chip {
+.transcript.is-dimmed[data-solo='g2'] .para[data-speaker='g2'] .para__text { color: var(--ink); }
+.transcript.is-dimmed[data-solo='g2'] .para[data-speaker='g2'] { border-left-color: hsl(var(--speaker-hue) 45% 72%); }
+.transcript.is-dimmed[data-solo='g2'] .para[data-speaker='g2'] .speaker-chip {
   background: var(--speaker-wash);
   border-color: var(--speaker-line);
   color: var(--ink);
   font-weight: 600;
 }
-.transcript.is-dimmed[data-solo='spk3'] .para[data-speaker='spk3'] .para__text { color: var(--ink); }
-.transcript.is-dimmed[data-solo='spk3'] .para[data-speaker='spk3'] { border-left-color: hsl(var(--speaker-hue) 45% 72%); }
-.transcript.is-dimmed[data-solo='spk3'] .para[data-speaker='spk3'] .speaker-chip {
+.transcript.is-dimmed[data-solo='g3'] .para[data-speaker='g3'] .para__text { color: var(--ink); }
+.transcript.is-dimmed[data-solo='g3'] .para[data-speaker='g3'] { border-left-color: hsl(var(--speaker-hue) 45% 72%); }
+.transcript.is-dimmed[data-solo='g3'] .para[data-speaker='g3'] .speaker-chip {
   background: var(--speaker-wash);
   border-color: var(--speaker-line);
   color: var(--ink);
   font-weight: 600;
 }
-.transcript.is-dimmed[data-solo='spk4'] .para[data-speaker='spk4'] .para__text { color: var(--ink); }
-.transcript.is-dimmed[data-solo='spk4'] .para[data-speaker='spk4'] { border-left-color: hsl(var(--speaker-hue) 45% 72%); }
-.transcript.is-dimmed[data-solo='spk4'] .para[data-speaker='spk4'] .speaker-chip {
+.transcript.is-dimmed[data-solo='g4'] .para[data-speaker='g4'] .para__text { color: var(--ink); }
+.transcript.is-dimmed[data-solo='g4'] .para[data-speaker='g4'] { border-left-color: hsl(var(--speaker-hue) 45% 72%); }
+.transcript.is-dimmed[data-solo='g4'] .para[data-speaker='g4'] .speaker-chip {
   background: var(--speaker-wash);
   border-color: var(--speaker-line);
   color: var(--ink);
   font-weight: 600;
 }
-.transcript.is-dimmed[data-solo='spk5'] .para[data-speaker='spk5'] .para__text { color: var(--ink); }
-.transcript.is-dimmed[data-solo='spk5'] .para[data-speaker='spk5'] { border-left-color: hsl(var(--speaker-hue) 45% 72%); }
-.transcript.is-dimmed[data-solo='spk5'] .para[data-speaker='spk5'] .speaker-chip {
+.transcript.is-dimmed[data-solo='g5'] .para[data-speaker='g5'] .para__text { color: var(--ink); }
+.transcript.is-dimmed[data-solo='g5'] .para[data-speaker='g5'] { border-left-color: hsl(var(--speaker-hue) 45% 72%); }
+.transcript.is-dimmed[data-solo='g5'] .para[data-speaker='g5'] .speaker-chip {
   background: var(--speaker-wash);
   border-color: var(--speaker-line);
   color: var(--ink);
   font-weight: 600;
 }
-.transcript.is-dimmed[data-solo='spk6'] .para[data-speaker='spk6'] .para__text { color: var(--ink); }
-.transcript.is-dimmed[data-solo='spk6'] .para[data-speaker='spk6'] { border-left-color: hsl(var(--speaker-hue) 45% 72%); }
-.transcript.is-dimmed[data-solo='spk6'] .para[data-speaker='spk6'] .speaker-chip {
+.transcript.is-dimmed[data-solo='g6'] .para[data-speaker='g6'] .para__text { color: var(--ink); }
+.transcript.is-dimmed[data-solo='g6'] .para[data-speaker='g6'] { border-left-color: hsl(var(--speaker-hue) 45% 72%); }
+.transcript.is-dimmed[data-solo='g6'] .para[data-speaker='g6'] .speaker-chip {
   background: var(--speaker-wash);
   border-color: var(--speaker-line);
   color: var(--ink);
   font-weight: 600;
 }
-.transcript.is-dimmed[data-solo='spk7'] .para[data-speaker='spk7'] .para__text { color: var(--ink); }
-.transcript.is-dimmed[data-solo='spk7'] .para[data-speaker='spk7'] { border-left-color: hsl(var(--speaker-hue) 45% 72%); }
-.transcript.is-dimmed[data-solo='spk7'] .para[data-speaker='spk7'] .speaker-chip {
+.transcript.is-dimmed[data-solo='g7'] .para[data-speaker='g7'] .para__text { color: var(--ink); }
+.transcript.is-dimmed[data-solo='g7'] .para[data-speaker='g7'] { border-left-color: hsl(var(--speaker-hue) 45% 72%); }
+.transcript.is-dimmed[data-solo='g7'] .para[data-speaker='g7'] .speaker-chip {
   background: var(--speaker-wash);
   border-color: var(--speaker-line);
   color: var(--ink);
   font-weight: 600;
 }
-.transcript.is-dimmed[data-solo='spk8'] .para[data-speaker='spk8'] .para__text { color: var(--ink); }
-.transcript.is-dimmed[data-solo='spk8'] .para[data-speaker='spk8'] { border-left-color: hsl(var(--speaker-hue) 45% 72%); }
-.transcript.is-dimmed[data-solo='spk8'] .para[data-speaker='spk8'] .speaker-chip {
+.transcript.is-dimmed[data-solo='g8'] .para[data-speaker='g8'] .para__text { color: var(--ink); }
+.transcript.is-dimmed[data-solo='g8'] .para[data-speaker='g8'] { border-left-color: hsl(var(--speaker-hue) 45% 72%); }
+.transcript.is-dimmed[data-solo='g8'] .para[data-speaker='g8'] .speaker-chip {
   background: var(--speaker-wash);
   border-color: var(--speaker-line);
   color: var(--ink);
   font-weight: 600;
 }
-.transcript.is-dimmed[data-solo='spk9'] .para[data-speaker='spk9'] .para__text { color: var(--ink); }
-.transcript.is-dimmed[data-solo='spk9'] .para[data-speaker='spk9'] { border-left-color: hsl(var(--speaker-hue) 45% 72%); }
-.transcript.is-dimmed[data-solo='spk9'] .para[data-speaker='spk9'] .speaker-chip {
+.transcript.is-dimmed[data-solo='g9'] .para[data-speaker='g9'] .para__text { color: var(--ink); }
+.transcript.is-dimmed[data-solo='g9'] .para[data-speaker='g9'] { border-left-color: hsl(var(--speaker-hue) 45% 72%); }
+.transcript.is-dimmed[data-solo='g9'] .para[data-speaker='g9'] .speaker-chip {
   background: var(--speaker-wash);
   border-color: var(--speaker-line);
   color: var(--ink);
@@ -463,16 +463,16 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  .transcript.is-dimmed[data-solo='spk0'] .para[data-speaker='spk0'] { border-left-color: hsl(var(--speaker-hue) 35% 40%); }
-  .transcript.is-dimmed[data-solo='spk1'] .para[data-speaker='spk1'] { border-left-color: hsl(var(--speaker-hue) 35% 40%); }
-  .transcript.is-dimmed[data-solo='spk2'] .para[data-speaker='spk2'] { border-left-color: hsl(var(--speaker-hue) 35% 40%); }
-  .transcript.is-dimmed[data-solo='spk3'] .para[data-speaker='spk3'] { border-left-color: hsl(var(--speaker-hue) 35% 40%); }
-  .transcript.is-dimmed[data-solo='spk4'] .para[data-speaker='spk4'] { border-left-color: hsl(var(--speaker-hue) 35% 40%); }
-  .transcript.is-dimmed[data-solo='spk5'] .para[data-speaker='spk5'] { border-left-color: hsl(var(--speaker-hue) 35% 40%); }
-  .transcript.is-dimmed[data-solo='spk6'] .para[data-speaker='spk6'] { border-left-color: hsl(var(--speaker-hue) 35% 40%); }
-  .transcript.is-dimmed[data-solo='spk7'] .para[data-speaker='spk7'] { border-left-color: hsl(var(--speaker-hue) 35% 40%); }
-  .transcript.is-dimmed[data-solo='spk8'] .para[data-speaker='spk8'] { border-left-color: hsl(var(--speaker-hue) 35% 40%); }
-  .transcript.is-dimmed[data-solo='spk9'] .para[data-speaker='spk9'] { border-left-color: hsl(var(--speaker-hue) 35% 40%); }
+  .transcript.is-dimmed[data-solo='g0'] .para[data-speaker='g0'] { border-left-color: hsl(var(--speaker-hue) 35% 40%); }
+  .transcript.is-dimmed[data-solo='g1'] .para[data-speaker='g1'] { border-left-color: hsl(var(--speaker-hue) 35% 40%); }
+  .transcript.is-dimmed[data-solo='g2'] .para[data-speaker='g2'] { border-left-color: hsl(var(--speaker-hue) 35% 40%); }
+  .transcript.is-dimmed[data-solo='g3'] .para[data-speaker='g3'] { border-left-color: hsl(var(--speaker-hue) 35% 40%); }
+  .transcript.is-dimmed[data-solo='g4'] .para[data-speaker='g4'] { border-left-color: hsl(var(--speaker-hue) 35% 40%); }
+  .transcript.is-dimmed[data-solo='g5'] .para[data-speaker='g5'] { border-left-color: hsl(var(--speaker-hue) 35% 40%); }
+  .transcript.is-dimmed[data-solo='g6'] .para[data-speaker='g6'] { border-left-color: hsl(var(--speaker-hue) 35% 40%); }
+  .transcript.is-dimmed[data-solo='g7'] .para[data-speaker='g7'] { border-left-color: hsl(var(--speaker-hue) 35% 40%); }
+  .transcript.is-dimmed[data-solo='g8'] .para[data-speaker='g8'] { border-left-color: hsl(var(--speaker-hue) 35% 40%); }
+  .transcript.is-dimmed[data-solo='g9'] .para[data-speaker='g9'] { border-left-color: hsl(var(--speaker-hue) 35% 40%); }
 }
 
 /* --- Words, highlighting, copy link ------------------------------------ */

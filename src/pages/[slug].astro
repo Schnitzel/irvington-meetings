@@ -19,7 +19,8 @@ import {
   formatDate,
   formatDuration,
   getMeetings,
-  speakerName,
+  speakerGroupIndex,
+  speakerGroups,
   transcriptUrl,
   type Meeting,
 } from '../lib/content.ts';
@@ -38,17 +39,25 @@ const audio = audioUrl(meeting);
 const archive = archiveUrl(meeting);
 const jsonUrl = transcriptUrl(meeting.slug);
 
-// A speaker label is only printed when the speaker changes, so a long turn
-// reads as prose rather than as a list of attributions.
-const paragraphs = transcript.paragraphs.map((p, i) => ({
-  ...p,
-  showSpeaker: i === 0 || transcript.paragraphs[i - 1].speaker !== p.speaker,
-}));
+const groups = speakerGroups(meeting);
+const groupOf = speakerGroupIndex(meeting);
+const nameOf = new Map(groups.map((g) => [g.id, g.name]));
 
-const speakerList = transcript.speakers.map((id) => ({
-  id,
-  name: speakerName(meeting, id),
-}));
+// A speaker label is only printed when the speaker changes, so a long turn
+// reads as prose rather than as a list of attributions. Grouping is applied
+// first, so consecutive audience questions do not each get their own
+// "Other speaker" heading.
+const paragraphs = transcript.paragraphs.map((p, i) => {
+  const group = groupOf[p.speaker];
+  return {
+    ...p,
+    group,
+    name: nameOf.get(group) ?? p.speaker,
+    showSpeaker: i === 0 || groupOf[transcript.paragraphs[i - 1].speaker] !== group,
+  };
+});
+
+const speakerList = groups.map((g) => ({ id: g.id, name: g.name }));
 ---
 
 <Base title={meta.title} description={meta.description} wide>
@@ -67,6 +76,11 @@ const speakerList = transcript.speakers.map((id) => ({
           <span aria-hidden="true"> · </span>
           <span>{describeDuration(transcript.duration)}</span>
         </p>
+        {meta.presenters && meta.presenters.length > 0 && (
+          <p class="recording__presenters">
+            Presented by {meta.presenters.join(' and ')}
+          </p>
+        )}
         {meta.description && <p class="recording__desc">{meta.description}</p>}
       </header>
 
@@ -116,7 +130,7 @@ const speakerList = transcript.speakers.map((id) => ({
         </p>
         <p>
           Speaker names were assigned by hand and may be wrong. This is an
-          independent archive, not an official record of the {meta.body}.
+          independent archive and not an official record of this meeting.
         </p>
       </aside>
 
@@ -142,12 +156,12 @@ const speakerList = transcript.speakers.map((id) => ({
             data-p={p.id}
             data-start={p.start}
             data-end={p.end}
-            data-speaker={p.speaker}
+            data-speaker={p.group}
           >
             {p.showSpeaker && (
               <p class="para__speaker">
-                <span class={`speaker-chip speaker-chip--${p.speaker}`}>
-                  {speakerName(meeting, p.speaker)}
+                <span class={`speaker-chip speaker-chip--${p.group}`}>
+                  {p.name}
                 </span>
               </p>
             )}

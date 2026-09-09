@@ -27,6 +27,7 @@ files.
 | The site | GitHub Pages | Free, and it only serves ~600 KB |
 | The audio | Internet Archive | Free, permanent, and it serves HTTP 206 range requests so scrubbing works |
 | Transcripts | In this repo | Small (about 100 KB gzipped per meeting) and worth version control |
+| Speaker names | `speakers.json` | Several diarized ids may map to one name; the site groups by name |
 | Raw Deepgram responses | Local only, gitignored | Large, regenerable, and already paid for |
 
 ## Adding a meeting
@@ -42,8 +43,11 @@ npm run prepare-meeting -- \
 
 That will:
 
-1. Compress the audio to mono 64 kbps AAC with `ffmpeg`.
+1. Compress the audio to mono 64 kbps AAC with `ffmpeg`, normalizing loudness.
 2. Transcribe it with Deepgram `nova-3`, using `content/<slug>/keyterms.txt`.
+   One whole-file pass establishes the speaker timeline; short windows, each
+   normalized on its own, do the actual transcribing. Whichever yields more
+   words wins, so a regression can never be published.
 3. Cache the raw response so normalization never costs money again.
 4. Normalize it to the schema in `scripts/lib/schema.ts`.
 5. Apply `content/<slug>/corrections.json`, if present.
@@ -80,6 +84,10 @@ Corrections are applied to the word stream, not the finished text, so a fix
 never desynchronises a word from its timing.
 
 ### Keyterms
+
+Names are worth getting exactly right: "Terri" and "Julien" were transcribed
+as "Terry" and "Julian"/"Julie" until `corrections.json` fixed them, and the
+surnames were barely recognised at all.
 
 `content/<slug>/keyterms.txt` is one term per line — place names,
 councilmember surnames, project names, zoning jargon. It is the single
@@ -144,6 +152,22 @@ if any audio file reaches `dist/`.
 - **The transcript is rendered server-side.** That is what makes the page
   readable before the audio buffers and what makes it work with JavaScript
   off. `transcript.json` is fetched afterwards purely for word timings.
+- **Audio is loudness-normalized before transcription, and this is not
+  optional.** Deepgram silently returned nothing for about 45% of the first
+  recording — 49 minutes of a 110-minute meeting — in passages that measured
+  the same loudness as passages it transcribed perfectly. Normalizing
+  recovered most of it.
+- **What matters is the *scope* of normalization, not the size of the
+  request.** `dynaudnorm`'s gain curve depends on the material it sees.
+  Computed across a whole meeting, loud passages hold the quiet ones down.
+  Recomputed per chunk, the quiet speech comes up — the same 5-minute window
+  went from 299 to 381 words at an identical -15.0 dB mean. That is why
+  chunks are cut from the original recording and normalized individually,
+  rather than sliced out of the already-normalized published file.
+- **Gaps in a transcript are not evidence of silence.** Measure the audio
+  (`ffmpeg -af volumedetect`) or cut the window out and transcribe it on its
+  own. Reasoning about a transcript's gaps from the transcript itself is
+  circular, and it produced a confidently wrong answer here.
 - **Deepgram's own paragraph grouping is not used.** It averaged 31 seconds
   per paragraph on the first meeting, with one running 156 seconds. We
   regroup from the word stream instead — see `scripts/lib/normalize.ts`.

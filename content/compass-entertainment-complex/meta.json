@@ -1,16 +1,20 @@
 {
   "title": "Compass Entertainment Complex",
   "date": "2026-08-14",
-  "body": "Irvington Town Council",
-  "description": "A presentation on the proposed village overlay district and the Compass Entertainment Complex site, followed by questions from the public.",
+  "body": "Public information meeting",
+  "description": "Terri Wesselman and Julien Patterson of the Renaissance Group LLC present their plans for a Village Overlay District and the Compass Entertainment Complex site, followed by questions from residents.",
   "agenda": [],
   "archive": {
     "item": "irvington-meetings-compass-entertainment-complex",
     "file": "audio.m4a"
   },
   "audio": {
-    "bytes": 54450725,
-    "duration": 6611.1147
+    "bytes": 54450382,
+    "duration": 6611.114667
   },
-  "packet": null
+  "packet": null,
+  "presenters": [
+    "Terri Wesselman",
+    "Julien Patterson"
+  ]
 }

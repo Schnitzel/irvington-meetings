@@ -27,9 +27,15 @@ export interface Meta {
   title: string;
   /** ISO date, YYYY-MM-DD. */
   date: string;
-  /** The public body that met, e.g. "Irvington Town Council". */
+  /**
+   * What kind of gathering this was, e.g. "Irvington Town Council" or
+   * "Public information meeting". Not every recording is a formal body:
+   * the first one was residents being presented to, not a council session.
+   */
   body: string;
   description: string;
+  /** Who presented, when the meeting was a presentation rather than a session. */
+  presenters?: string[];
   /** Hand-authored chapter markers. Optional. */
   agenda: AgendaItem[];
   /** Internet Archive item that hosts the audio. */
@@ -136,6 +142,7 @@ export async function normalizeSlug(
       date: options.metaDefaults?.date ?? new Date().toISOString().slice(0, 10),
       body: options.metaDefaults?.body ?? '',
       description: options.metaDefaults?.description ?? '',
+      presenters: [],
       agenda: [],
       archive: { item: options.metaDefaults?.archive?.item ?? null, file: 'audio.m4a' },
       audio: { bytes: options.audioBytes ?? 0, duration },

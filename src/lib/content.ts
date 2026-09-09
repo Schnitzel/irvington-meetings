@@ -72,6 +72,47 @@ export function speakerName(meeting: Meeting, id: string): string {
   return meeting.speakers[id] ?? id;
 }
 
+export interface SpeakerGroup {
+  /** Stable id used in markup and CSS, e.g. "g0". */
+  id: string;
+  name: string;
+  /** Every diarized speaker id that resolves to this name. */
+  members: string[];
+}
+
+/**
+ * Speakers grouped by display name.
+ *
+ * Diarization splits one person across several ids and merges different
+ * people into one, so the owner is free to map many ids to a single name —
+ * every audience voice in the first meeting is just "Other speaker". The site
+ * keys colour, the legend and the dim/undim control off these groups rather
+ * than off the raw ids, so seven audience voices produce one chip, not seven
+ * identical ones.
+ */
+export function speakerGroups(meeting: Meeting): SpeakerGroup[] {
+  const byName = new Map<string, SpeakerGroup>();
+
+  // Ordered by first appearance, so colours are stable and the legend reads
+  // in the order people are first heard.
+  for (const id of meeting.transcript.speakers) {
+    const name = speakerName(meeting, id);
+    const existing = byName.get(name);
+    if (existing) existing.members.push(id);
+    else byName.set(name, { id: `g${byName.size}`, name, members: [id] });
+  }
+  return [...byName.values()];
+}
+
+/** Maps each diarized speaker id to its group id. */
+export function speakerGroupIndex(meeting: Meeting): Record<string, string> {
+  const index: Record<string, string> = {};
+  for (const group of speakerGroups(meeting)) {
+    for (const member of group.members) index[member] = group.id;
+  }
+  return index;
+}
+
 /**
  * The public URL of the audio.
  *

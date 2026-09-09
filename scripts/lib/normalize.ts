@@ -27,6 +27,30 @@ function endsSentence(text: string): boolean {
   return SENTENCE_END.test(text);
 }
 
+/**
+ * Enforces a monotonic, non-overlapping word stream.
+ *
+ * Every downstream consumer assumes it: the paragraph binary search, the
+ * word highlighter, and the schema validator. Two sources break it — chunked
+ * transcription, where a word at a chunk boundary can end after the next
+ * chunk's first word begins, and SRT/VTT interpolation, where rounding can
+ * push a cue's last word past the next cue's first.
+ *
+ * Ends are clamped rather than words dropped: the text is correct, only the
+ * timing is approximate, and losing a word to a rounding artifact would be
+ * much worse than shortening its highlight by a fraction of a second.
+ */
+export function sanitizeWords(words: SourceWord[]): SourceWord[] {
+  const sorted = [...words].sort((a, b) => a.start - b.start || a.end - b.end);
+
+  for (const [i, word] of sorted.entries()) {
+    if (word.end < word.start) word.end = word.start;
+    const next = sorted[i + 1];
+    if (next && word.end > next.start) word.end = next.start;
+  }
+  return sorted;
+}
+
 export function groupIntoParagraphs(
   words: SourceWord[],
   options: GroupingOptions = DEFAULT_GROUPING,
@@ -84,7 +108,7 @@ export function buildTranscript(
   duration: number,
   options: GroupingOptions = DEFAULT_GROUPING,
 ): Transcript {
-  const paragraphs = groupIntoParagraphs(words, options);
+  const paragraphs = groupIntoParagraphs(sanitizeWords(words), options);
 
   // Only speakers that actually say something get listed, and they are sorted
   // by index so the order is stable across re-runs.

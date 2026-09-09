@@ -124,6 +124,49 @@ export async function uploadAudio(
 }
 
 /**
+ * Rewrites an existing item's metadata.
+ *
+ * Needed because the first Compass upload credited the "Irvington Town
+ * Council", which turned out to be wrong — it was a public information
+ * meeting run by the Renaissance Group LLC. Item metadata is public and
+ * effectively permanent, so getting it corrected matters.
+ */
+export async function updateItemMetadata(
+  credentials: ArchiveCredentials,
+  identifier: string,
+  fields: Record<string, string>,
+): Promise<void> {
+  // The metadata write API takes an RFC 6902 patch.
+  const patch = Object.entries(fields).map(([key, value]) => ({
+    op: 'replace',
+    path: `/${key}`,
+    value,
+  }));
+
+  const body = new URLSearchParams({
+    '-target': 'metadata',
+    '-patch': JSON.stringify(patch),
+    access: credentials.accessKey,
+    secret: credentials.secretKey,
+  });
+
+  const response = await fetch(`https://archive.org/metadata/${identifier}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body,
+  });
+
+  const text = await response.text();
+  if (!response.ok) {
+    throw new Error(`Archive metadata update failed: HTTP ${response.status} ${text.slice(0, 300)}`);
+  }
+  const result = JSON.parse(text) as { success?: boolean; error?: string };
+  if (result.success === false) {
+    throw new Error(`Archive metadata update rejected: ${result.error ?? text.slice(0, 300)}`);
+  }
+}
+
+/**
  * Confirms the uploaded file is reachable and that the host honours range
  * requests — the single most likely thing to silently break (§9).
  */

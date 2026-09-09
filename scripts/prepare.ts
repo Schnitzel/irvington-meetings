@@ -22,15 +22,20 @@ import { join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 
 import { compress, probeDuration, requireFfmpeg } from './lib/audio.ts';
+import { loadEnv } from './lib/env.ts';
+import { transcribeChunked } from './lib/transcribe.ts';
 import {
   identifierFor,
   itemExists,
   loadCredentials,
+  updateItemMetadata,
   uploadAudio,
   verifyRangeSupport,
 } from './lib/archive.ts';
-import { loadApiKey, loadKeyterms, transcribe } from './lib/deepgram.ts';
+import { loadApiKey, loadKeyterms } from './lib/deepgram.ts';
 import { contentDir, formatBytes, formatDuration, normalizeSlug, RAW_FILE } from './lib/pipeline.ts';
+
+loadEnv();
 
 const { values } = parseArgs({
   options: {
@@ -42,7 +47,9 @@ const { values } = parseArgs({
     description: { type: 'string' },
     transcript: { type: 'string' },
     'no-compress': { type: 'boolean', default: false },
+    'no-normalize': { type: 'boolean', default: false },
     'no-upload': { type: 'boolean', default: false },
+    reupload: { type: 'boolean', default: false },
     force: { type: 'boolean', default: false },
     help: { type: 'boolean', short: 'h' },
   },
@@ -62,7 +69,12 @@ Usage: npm run prepare-meeting -- --input <file> --slug <slug> [options]
   --transcript <file>   Use an existing SRT/VTT/Whisper JSON instead of
                         transcribing (skips Deepgram entirely).
   --no-compress         The input is already compressed; copy it as-is.
+  --no-normalize        Skip loudness normalization. Only do this if the
+                        recording already has a consistent level; without it
+                        Deepgram drops quiet passages entirely.
   --no-upload           Skip the Internet Archive upload.
+  --reupload            Overwrite the audio on an existing Archive item, for
+                        when the local file has been regenerated.
   --force               Re-transcribe even if a cached response exists.
                         This costs money; normalization alone is free.
 `);
@@ -99,6 +111,21 @@ const keytermsPath = join(dir, 'keyterms.txt');
 
 const step = (n: number, message: string) => console.log(`\n[${n}/6] ${message}`);
 
+/*
+ * How the recording is described on the Internet Archive. Kept in one place
+ * because the item is public and permanent, and the first upload described
+ * this meeting wrongly.
+ */
+const archiveTitle = (meta: any) => `${meta.title} — ${meta.body}, ${meta.date}`;
+const archiveCreator = (meta: any) =>
+  meta.presenters?.length ? meta.presenters.join(', ') : meta.body;
+const archiveDescription = (meta: any) =>
+  `${meta.description || meta.title}\n\n` +
+  `Audio recording of a public meeting held in Irvington, Virginia on ${meta.date}. ` +
+  `Published by irvingtonmeetings.com, an independent volunteer archive. ` +
+  `A synchronised transcript is available at ` +
+  `https://irvingtonmeetings.com/${slug}`;
+
 try {
   await mkdir(dir, { recursive: true });
 
@@ -113,11 +140,12 @@ try {
       await writeFile(audioPath, await readFile(input));
       audioBytes = (await readFile(audioPath)).length;
     } else {
-      step(1, 'Compressing to mono 64 kbps AAC');
+      const normalize = !values['no-normalize'];
+      step(1, `Compressing to mono 64 kbps AAC${normalize ? ' and normalizing loudness' : ''}`);
       await requireFfmpeg();
       const source = await probeDuration(input);
       console.log(`      source: ${formatDuration(source)}`);
-      ({ bytes: audioBytes } = await compress(input, audioPath));
+      ({ bytes: audioBytes } = await compress(input, audioPath, { normalize }));
     }
     console.log(`      ✓ ${audioPath} (${formatBytes(audioBytes)})`);
   } else if (existsSync(audioPath)) {
@@ -139,7 +167,17 @@ try {
     }
     const apiKey = loadApiKey();
     const started = Date.now();
-    const raw = await transcribe(apiKey, await readFile(audioPath), keyterms);
+    const raw = await transcribeChunked({
+      apiKey,
+      audioPath,
+      duration: await probeDuration(audioPath),
+      keyterms,
+      // Cut chunks from the original recording when we have it, so each is
+      // normalized independently.
+      sourceAudio: values.input ? expand(values.input) : audioPath,
+      cacheDir: join(dir, '.deepgram-chunks'),
+      onProgress: (message) => console.log(`      ${message}`),
+    });
     await writeFile(rawPath, JSON.stringify(raw));
     console.log(`      ✓ cached to ${rawPath} in ${((Date.now() - started) / 1000).toFixed(0)}s`);
   }
@@ -169,8 +207,17 @@ try {
     const identifier = identifierFor(slug);
     step(6, `Publishing audio to the Internet Archive as ${identifier}`);
 
-    if (await itemExists(identifier)) {
-      console.log('      Item already exists — leaving it alone.');
+    if ((await itemExists(identifier)) && !values.reupload) {
+      console.log('      Item already exists — refreshing its metadata only.');
+      const credentials = await loadCredentials();
+      const meta = JSON.parse(await readFile(join(dir, 'meta.json'), 'utf8'));
+      await updateItemMetadata(credentials, identifier, {
+        title: archiveTitle(meta),
+        description: archiveDescription(meta),
+        creator: archiveCreator(meta),
+        date: meta.date,
+      });
+      console.log('      ✓ metadata updated');
     } else {
       const credentials = await loadCredentials();
       const meta = JSON.parse(await readFile(join(dir, 'meta.json'), 'utf8'));
@@ -180,13 +227,10 @@ try {
         identifier,
         filename: 'audio.m4a',
         body: await readFile(audioPath),
-        title: `${meta.title} — ${meta.body}, ${meta.date}`,
-        description:
-          `${meta.description || meta.title}\n\n` +
-          `Audio recording of a public meeting of the ${meta.body}, ${meta.date}. ` +
-          `Published by irvingtonmeetings.com, an independent volunteer archive.`,
+        title: archiveTitle(meta),
+        description: archiveDescription(meta),
         date: meta.date,
-        creator: meta.body,
+        creator: archiveCreator(meta),
         subjects: ['Irvington', 'Virginia', 'public meeting', meta.body],
       });
       console.log(`      ✓ ${url}`);

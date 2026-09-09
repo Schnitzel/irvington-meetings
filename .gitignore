@@ -16,3 +16,6 @@ content/*/audio.m4a
 
 # Local dev copies of audio; the published files live on the Internet Archive.
 public/audio/
+
+# Per-chunk transcription responses and slices: large and regenerable.
+content/*/.deepgram-chunks/

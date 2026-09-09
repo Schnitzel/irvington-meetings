@@ -1,0 +1,24 @@
+{
+  "corrections": [
+    {
+      "find": "\\bTerry\\b",
+      "replace": "Terri",
+      "regex": true
+    },
+    {
+      "find": "\\bJulian\\b",
+      "replace": "Julien",
+      "regex": true
+    },
+    {
+      "find": "\\bJulie\\b",
+      "replace": "Julien",
+      "regex": true
+    },
+    {
+      "find": "\\bJerry and I\\b",
+      "replace": "Terri and I",
+      "regex": true
+    }
+  ]
+}

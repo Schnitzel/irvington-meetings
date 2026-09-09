@@ -9,7 +9,10 @@
 
 import { parseArgs } from 'node:util';
 
+import { loadEnv } from './lib/env.ts';
 import { formatDuration, normalizeSlug } from './lib/pipeline.ts';
+
+loadEnv();
 
 const { values } = parseArgs({
   options: {
