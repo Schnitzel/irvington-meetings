@@ -9,7 +9,7 @@ interface Props {
 }
 
 const { title, description, wide = false } = Astro.props;
-const siteName = 'Irvington Meetings';
+const siteName = 'Irvington public interest meetings';
 const fullTitle = title === siteName ? title : `${title} — ${siteName}`;
 ---
 
@@ -32,7 +32,7 @@ const fullTitle = title === siteName ? title : `${title} — ${siteName}`;
     <header class="masthead">
       <div class={wide ? 'wrap wrap--wide masthead__inner' : 'wrap masthead__inner'}>
         <p class="masthead__title"><a href="/">{siteName}</a></p>
-        <p class="masthead__tag">Recordings and transcripts of public meetings</p>
+        <p class="masthead__tag">Complete recordings and transcripts</p>
       </div>
     </header>
 
