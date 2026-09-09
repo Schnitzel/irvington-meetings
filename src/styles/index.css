@@ -27,6 +27,39 @@
   color: var(--ink-soft);
 }
 
+/*
+ * What this site is, stated plainly. The point is the contrast with a
+ * newsletter: nothing is gated, and nothing is summarized on the reader's
+ * behalf.
+ */
+.promise {
+  margin: 1.25rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.5rem;
+}
+.promise li {
+  position: relative;
+  padding-left: 1.4rem;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+.promise li::before {
+  content: '';
+  position: absolute;
+  left: 0.15rem;
+  top: 0.58em;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.promise strong {
+  color: var(--ink);
+}
+
 /* --- Search ------------------------------------------------------------ */
 
 .site-search {
