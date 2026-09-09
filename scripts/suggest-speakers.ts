@@ -107,10 +107,43 @@ try {
    * voice would put the wrong name on a civic record, so such turns are
    * skipped for roll-call purposes entirely.
    */
-  const answersIn = (text: string) => (text.match(/\b(?:here|present)\b/gi) ?? []).length;
+  /** Every trailing portion of a name, longest first: "Van Saun", "Saun". */
+  const variantsOf = (name: string) => {
+    const parts = name.split(' ');
+    return parts
+      .map((_, i) => parts.slice(i).join(' '))
+      .filter((v) => v.length > 2)
+      .map((v) => v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  };
+  const allVariants = roster.flatMap(variantsOf).join('|');
+
+  /** How many "<name> here" pairs a turn contains. */
+  const answerPairs = (text: string) =>
+    allVariants
+      ? (text.match(new RegExp(`\\b(?:${allVariants})\\s*,?\\s*(?:here|present)\\b`, 'gi')) ?? [])
+          .length
+      : 0;
+
+  /** How many distinct roster people a turn mentions at all. */
+  const namesIn = (text: string) =>
+    roster.filter((n) => new RegExp(`\\b(?:${variantsOf(n).join('|')})\\b`, 'i').test(text)).length;
 
   for (const [i, p] of paragraphs.entries()) {
-    const isRollCallRecital = p.start <= ROLL_CALL_WINDOW && answersIn(p.text) >= 2;
+    /*
+     * Diarization often merges a whole roll call into one turn, and every
+     * name in such a turn belongs to someone else. Two shapes occur:
+     *
+     *   "Windsor Cline here. Frances Westbrook here. Bill Robinson here."
+     *   "Frances Westbrook. Mary Windsor Cline. Mary Carrie Bradley."
+     *
+     * Both are rejected. But a genuine self-announcement often names other
+     * people too — "Julie Harris here. Sam Van Saun is absent, and so far so
+     * is mister Nunnally" — so counting names alone threw away good matches.
+     * What separates them is how many "<name> here" pairs there are.
+     */
+    const pairs = answerPairs(p.text);
+    const isRollCallRecital =
+      p.start <= ROLL_CALL_WINDOW && (pairs >= 2 || (pairs === 0 && namesIn(p.text) >= 2));
 
     for (const name of roster) {
       /*
@@ -137,10 +170,29 @@ try {
          * he's present" (someone speaking about him) — both attributed a
          * voice to the wrong person.
          */
-        const selfAnnounced = new RegExp(
-          `^\\s*(?:${alternation})\\s*[,.]?\\s*(?:is\\s+)?(?:here|present)\\b`,
-          'i',
-        ).test(p.text);
+        /*
+         * Either "Julie Harris here." or, where the chair asked for a roll
+         * call by name, simply "Samantha Van Saun." — the whole turn being
+         * one roster name is itself the answer. Safe because a turn holding
+         * two or more names was already rejected above as a recital.
+         */
+        const selfAnnounced =
+          new RegExp(
+            `^\\s*(?:${alternation})\\s*[,.]?\\s*(?:is\\s+)?(?:here|present)\\b`,
+            'i',
+          ).test(p.text) ||
+          /*
+           * One leading word is allowed before the surname, because people
+           * answer with the name they actually use: the roster says "Philip
+           * Robinson" and the man says "Phil Robinson." Honorifics are
+           * excluded — "Mister Nunnally." in the roll-call window is the
+           * clerk calling him, not Nunnally answering.
+           */
+          new RegExp(
+            `^\\s*(?!(?:mr|mister|mrs|missus|ms|miss|dr|mayor|councilman|councilwoman|councilmember)\\b)` +
+              `(?:[A-Za-z][\\w'’-]*\\.?\\s+)?(?:${alternation})\\s*[.,!?]?\\s*$`,
+            'i',
+          ).test(p.text);
 
         if (selfAnnounced) {
           suggestions.push({
@@ -182,7 +234,16 @@ try {
      * 90 Railway Road" two minutes in.
      */
     const intro = /\b(?:my name is|I am|I'm)\s+([A-Z][a-z'’-]+(?: [A-Z][a-z'’-]+){1,2})\b/.exec(p.text);
-    if (intro && !isRollCallRecital) {
+    /*
+     * Only accept an introduction that is either a known roster name or a
+     * plain two-word name. A looser rule published "Mary Carey Bradley",
+     * which is nobody — it is the recogniser mangling "M.C. (Cay) Bradley".
+     */
+    const plausible =
+      intro &&
+      (roster.some((n) => n.toLowerCase() === intro[1].toLowerCase()) ||
+        intro[1].split(' ').length === 2);
+    if (intro && plausible && !isRollCallRecital) {
       suggestions.push({
         speaker: p.speaker,
         name: intro[1],
