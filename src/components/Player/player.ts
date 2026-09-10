@@ -92,7 +92,6 @@ class MeetingPlayer {
   /** Set once the search UI is bound; redraws the "3/21" counter. */
   private paintCount: () => void = () => {};
 
-  private soloSpeaker: string | null = null;
   private scrubbing = false;
   private frame = 0;
 
@@ -110,12 +109,6 @@ class MeetingPlayer {
     // Reveal the real player and retire the no-JS audio element (§9).
     this.player.hidden = false;
     if (this.fallback) this.fallback.hidden = true;
-    // The static speaker list is the scripting-off equivalent of the player's
-    // legend; showing both just says the same thing twice.
-    const staticSpeakers = this.root.querySelector<HTMLElement>('.speakers');
-    if (staticSpeakers && this.player.querySelector('[data-speaker-toggle]')) {
-      staticSpeakers.hidden = true;
-    }
 
     this.paragraphEls = [...this.body.querySelectorAll<HTMLElement>('.para')];
 
@@ -139,7 +132,6 @@ class MeetingPlayer {
     this.bindTransport();
     this.bindTimeline();
     this.bindSearch();
-    this.bindLegend();
     this.bindFollow();
     this.bindKeyboard();
     this.bindPositionMemory();
@@ -692,30 +684,6 @@ class MeetingPlayer {
     window.setTimeout(() => {
       this.programmaticScroll = false;
     }, reduced ? 60 : 700);
-  }
-
-  // --- Speaker legend ----------------------------------------------------
-
-  private bindLegend(): void {
-    for (const button of this.root.querySelectorAll<HTMLButtonElement>('[data-speaker-toggle]')) {
-      button.addEventListener('click', () => {
-        const id = button.dataset.speakerToggle!;
-        this.soloSpeaker = this.soloSpeaker === id ? null : id;
-
-        for (const other of this.root.querySelectorAll<HTMLButtonElement>('[data-speaker-toggle]')) {
-          const on = other.dataset.speakerToggle === this.soloSpeaker;
-          other.setAttribute('aria-pressed', String(on));
-          other.classList.toggle('is-solo', on);
-        }
-        this.body.classList.toggle('is-dimmed', this.soloSpeaker !== null);
-        this.body.dataset.solo = this.soloSpeaker ?? '';
-        this.say(
-          this.soloSpeaker
-            ? `Showing ${button.textContent?.trim()}. Everyone else is dimmed.`
-            : 'Showing every speaker.',
-        );
-      });
-    }
   }
 
   // --- Keyboard ----------------------------------------------------------

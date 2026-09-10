@@ -10,10 +10,9 @@ import './player.css';
 
 interface Props {
   duration: number;
-  speakers: Array<{ id: string; name: string }>;
 }
 
-const { duration, speakers } = Astro.props;
+const { duration } = Astro.props;
 
 const speeds = [0.75, 1, 1.25, 1.5, 1.75, 2];
 ---
@@ -125,25 +124,6 @@ const speeds = [0.75, 1, 1.25, 1.5, 1.75, 2];
     </div>
   </div>
 
-  {speakers.length > 1 && (
-    <div class="player__legend">
-      <ul class="legend" data-legend>
-        {speakers.map((s) => (
-          <li>
-            <button
-              type="button"
-              class={`legend__item speaker-chip speaker-chip--${s.id}`}
-              data-speaker-toggle={s.id}
-              aria-pressed="false"
-            >
-              {s.name}
-            </button>
-          </li>
-        ))}
-      </ul>
-      <p class="legend__hint">Select a speaker to dim everyone else.</p>
-    </div>
-  )}
 </div>
 
 <p class="player__status" data-status role="status" aria-live="polite"></p>

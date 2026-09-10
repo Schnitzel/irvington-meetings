@@ -82,28 +82,6 @@
   color: var(--ink-faint);
 }
 
-/* --- Speakers ---------------------------------------------------------- */
-
-.speakers {
-  margin: 2rem 0 0;
-}
-.speakers__heading {
-  margin: 0 0 0.6rem;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
-}
-.speakers__list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
 /*
  * Speaker colours. Each is a left border and a tinted label rather than
  * coloured body text, so contrast never depends on the hue — colour is a
@@ -141,6 +119,36 @@
     --speaker-wash: hsl(var(--speaker-hue, 205) 30% 22%);
     --speaker-line: hsl(var(--speaker-hue, 205) 30% 38%);
   }
+}
+
+/*
+ * "possibly" carries the uncertainty, so it is set apart from the name
+ * rather than blended into it — a reader skimming chips should register the
+ * hedge without having to read carefully.
+ */
+.speaker-chip__hedge {
+  margin-right: 0.3rem;
+  font-weight: 400;
+  font-style: italic;
+  opacity: 0.8;
+}
+.speaker-chip--guess {
+  border-style: dashed;
+}
+
+.transcript__speakers-note {
+  margin: 0.9rem 0 0;
+  padding: 0.7rem 0.85rem;
+  background: var(--paper-sunken);
+  border-left: 3px solid var(--rule-strong);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--ink-soft);
+  max-width: var(--measure);
+}
+.transcript__speakers-note strong {
+  color: var(--ink);
 }
 
 /* --- Transcript -------------------------------------------------------- */

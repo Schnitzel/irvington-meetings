@@ -39,6 +39,25 @@ const audio = audioUrl(meeting);
 const archive = archiveUrl(meeting);
 const jsonUrl = transcriptUrl(meeting.slug);
 
+/*
+ * A numbered label claims nothing, but a name is an inference: from the roll
+ * call, or from someone introducing themselves. Diarization also merges and
+ * splits voices, so even a correct reading of the roll call can end up on the
+ * wrong turns. The page therefore presents names as possibilities, never as
+ * attributions.
+ */
+const isNumbered = (name: string) => /^Speaker \d+$/.test(name);
+
+/**
+ * Gap totals are often well under a minute, where rounding to minutes reads
+ * as "0 minutes in total" — which tells a reader nothing and looks broken.
+ */
+function describeGapTime(seconds: number): string {
+  if (seconds < 90) return `${Math.round(seconds)} seconds`;
+  const minutes = Math.round(seconds / 60);
+  return `${minutes} minute${minutes === 1 ? '' : 's'} in total`;
+}
+
 const groups = speakerGroups(meeting);
 const groupOf = speakerGroupIndex(meeting);
 const nameOf = new Map(groups.map((g) => [g.id, g.name]));
@@ -53,10 +72,13 @@ const gapAfter = new Map((transcript.gaps ?? []).map((g) => [g.start.toFixed(2),
 
 const paragraphs = transcript.paragraphs.map((p, i) => {
   const group = groupOf[p.speaker];
+  const name = nameOf.get(group) ?? p.speaker;
   return {
     ...p,
     group,
-    name: nameOf.get(group) ?? p.speaker,
+    name,
+    // A number claims nothing; a name is an inference and is hedged as one.
+    guess: !isNumbered(name),
     showSpeaker: i === 0 || groupOf[transcript.paragraphs[i - 1].speaker] !== group,
     gap: gapAfter.get(p.end.toFixed(2)) ?? null,
   };
@@ -65,7 +87,8 @@ const paragraphs = transcript.paragraphs.map((p, i) => {
 const gapCount = transcript.gaps?.length ?? 0;
 const gapSeconds = (transcript.gaps ?? []).reduce((sum, g) => sum + (g.end - g.start), 0);
 
-const speakerList = groups.map((g) => ({ id: g.id, name: g.name }));
+const speakerList = groups.map((g) => ({ id: g.id, name: g.name, guess: !isNumbered(g.name) }));
+const anyGuesses = speakerList.some((s) => s.guess);
 ---
 
 <Base title={meta.title} description={meta.description} wide>
@@ -110,7 +133,7 @@ const speakerList = groups.map((g) => ({ id: g.id, name: g.name }));
         </p>
       </div>
 
-      <Player duration={transcript.duration} speakers={speakerList} />
+      <Player duration={transcript.duration} />
 
       <div class="recording__links">
         <a class="download" href={audio} download>
@@ -142,32 +165,32 @@ const speakerList = groups.map((g) => ({ id: g.id, name: g.name }));
           Please listen to the audio before quoting anyone.
         </p>
         <p>
-          Speaker names were assigned by hand and may be wrong. This is an
-          independent archive and not an official record of this meeting.
+          Speaker names are guesses worked out from the recording, not
+          attributions, and may be wrong. This is an independent archive and
+          not an official record of this meeting.
         </p>
       </aside>
 
-      {speakerList.length > 1 && (
-        <section class="speakers" aria-labelledby="speakers-heading">
-          <h2 class="speakers__heading" id="speakers-heading">Speakers</h2>
-          <ul class="speakers__list">
-            {speakerList.map((s) => (
-              <li class="speakers__item">
-                <span class={`speaker-chip speaker-chip--${s.id}`}>{s.name}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
       <h2 class="transcript__heading" id="transcript">Transcript</h2>
+
+      {anyGuesses && (
+        <p class="transcript__speakers-note">
+          Names below are <strong>guesses</strong>, worked out from the roll call
+          and from people introducing themselves. The recording separates voices
+          imperfectly, so a name may be attached to the wrong person, and voices
+          we could not identify are simply numbered. Listen to the audio before
+          attributing anything to anyone.
+        </p>
+      )}
 
       {gapCount > 0 && (
         <p class="transcript__note">
-          {gapCount} passages ({Math.round(gapSeconds / 60)} minutes in total)
-          could not be transcribed — mostly questions asked away from the
-          microphone. They are marked in place so you can hear them for
-          yourself.
+          {gapCount === 1 ? 'One passage' : `${gapCount} passages`}
+          ({describeGapTime(gapSeconds)}) could not be transcribed —
+          {gapCount === 1 ? ' usually a question' : ' mostly questions'} asked
+          away from the microphone.
+          {gapCount === 1 ? ' It is' : ' They are'} marked in place so you can
+          hear {gapCount === 1 ? 'it' : 'them'} for yourself.
         </p>
       )}
 
@@ -182,7 +205,13 @@ const speakerList = groups.map((g) => ({ id: g.id, name: g.name }));
           >
             {p.showSpeaker && (
               <p class="para__speaker">
-                <span class={`speaker-chip speaker-chip--${p.group}`}>
+                <span
+                  class={`speaker-chip speaker-chip--${p.group}${p.guess ? ' speaker-chip--guess' : ''}`}
+                  title={p.guess
+                    ? 'A guess, from the roll call or from someone introducing themselves. It may be wrong.'
+                    : 'This voice could not be identified.'}
+                >
+                  {p.guess && <span class="speaker-chip__hedge">possibly</span>}
                   {p.name}
                 </span>
               </p>
